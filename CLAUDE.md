@@ -145,3 +145,9 @@ ATS parsers read the PDF's embedded text layer, not the rendered page. Extract i
 - [ ] Email and phone appear as **literal text** in the extraction (icon-glyph noise like `MOBILE-ALT`/`Envelope` is harmless, but a contact detail carried only by an icon or hyperlink is invisible to ATS)
 - [ ] Reading order of the extracted text matches the visual order (single-column stock template is safe; multi-column custom templates are where this breaks)
 - [ ] Posting keywords covered or honestly absent - synonym-only matches tightened to the posting's exact term where truthfully applicable, keywords the profile genuinely supports added to experience bullets, genuine gaps left visible and **never stuffed**
+
+<!-- CCE-100:START -->
+## CCE-100 — Comunicación Clara y Estructurada (v1.2.0)
+
+Aplica CCE-100 como estándar por defecto para respuestas, documentación e instrucciones a agentes. Da la respuesta principal primero. Escribe una idea por oración y una acción por paso. Utiliza verbos concretos, voz activa y terminología consistente. Preserva todos los datos, fuentes, términos legales, matices y excepciones. Distingue hechos, hipótesis y límites de información. Adapta el formato a la tarea. No confundas esta adaptación con cumplimiento oficial ASD-STE100. Para revisión detallada, utiliza la skill `cce-100`. Las actualizaciones requieren pruebas, versión y aprobación humana. Para tareas BUO consulta `docs/BUO_DICCIONARIO.md` si está presente y registra términos nuevos solo como candidatos pendientes de revisión. No edites definiciones vigentes automáticamente.
+<!-- CCE-100:END -->
