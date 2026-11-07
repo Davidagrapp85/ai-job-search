@@ -17,3 +17,9 @@ To prevent duplication and configuration drift across different AI agent framewo
    - Do not duplicate these rules or specifications. Treat `.claude/` files as the single source of truth.
 3. **Portal Search Skills:**
    - Job-portal search CLIs live under [.agents/skills/](.agents/skills/) in the portable Agent Skills format (with a `SKILL.md` per portal). Codex and Antigravity discover these automatically; the `/scrape` workflow in [.claude/skills/job-scraper/](.claude/skills/job-scraper/) orchestrates them.
+
+<!-- CCE-100:START -->
+## CCE-100 — Comunicación Clara y Estructurada (v1.2.0)
+
+Aplica CCE-100 como estándar por defecto para respuestas, documentación e instrucciones a agentes. Da la respuesta principal primero. Escribe una idea por oración y una acción por paso. Utiliza verbos concretos, voz activa y terminología consistente. Preserva todos los datos, fuentes, términos legales, matices y excepciones. Distingue hechos, hipótesis y límites de información. Adapta el formato a la tarea. No confundas esta adaptación con cumplimiento oficial ASD-STE100. Para revisión detallada, utiliza la skill `cce-100`. Las actualizaciones requieren pruebas, versión y aprobación humana. Para tareas BUO consulta `docs/BUO_DICCIONARIO.md` si está presente y registra términos nuevos solo como candidatos pendientes de revisión. No edites definiciones vigentes automáticamente.
+<!-- CCE-100:END -->
