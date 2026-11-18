@@ -119,3 +119,7 @@ company_research/*.json
 
 # Brainstorm mockups (superpowers visual companion) - never ship
 .superpowers/
+
+# Datos personales de búsqueda de empleo (centralizados desde DD_Brain el 17-nov-2026).
+# Nunca se commitean: el remoto se trata como si fuera público.
+/05_Busqueda_Empleo/
