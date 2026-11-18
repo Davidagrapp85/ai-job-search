@@ -79,3 +79,15 @@ class Fase1Stats(unittest.TestCase):
                        fecha_envio=f["fecha"]) for i, f in enumerate(base, 1)]
         self.assertEqual(calcular(base), calcular(nuevas))
         self.assertEqual(calcular(nuevas)["enviadas"], 2)
+
+
+TRACKER_SKILL = DATA / "07_Skills" / "empleo-tracker" / "SKILL.md"
+
+
+@unittest.skipUnless(TRACKER_SKILL.is_file(), "skill empleo-tracker no está presente")
+class Fase1TrackerSkill(unittest.TestCase):
+    def test_tracker_skill_usa_cli(self):
+        t = TRACKER_SKILL.read_text(encoding="utf-8")
+        self.assertIn("bun run tracker", t)
+        self.assertNotIn("reemplaza la fila", t)
+        self.assertIn("aprobada", t)
