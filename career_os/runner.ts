@@ -8,14 +8,15 @@ const REPO = resolve(import.meta.dir, "..");
 export type Tipo = "armar" | "chat" | "aprendizajes" | "enviar" | "borrador" | "aplicar";
 const LIMITE = /usage limit|rate limit|limit reached|quota/i;
 const TIMEOUT_MS = 20 * 60_000;
-const POSTULACIONES = "./05_Busqueda_Empleo/04_Postulaciones/**";
+// Reglas con ruta absoluta: en Claude Code "//ruta" es ruta absoluta; "./ruta" no coincide con las rutas que usa Write.
+const DATOS = `/${REPO}/05_Busqueda_Empleo`;
+const POSTULACIONES = `${DATOS}/04_Postulaciones/**`;
 const BASE = ["Read", "Glob", "Grep", "Skill", "Bash(bun run tracker:*)", "Bash(bun run tracker *)"];
 const COMPOSIO = ["mcp__composio__COMPOSIO_SEARCH_TOOLS", "mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL"];
+const ambos = (ruta: string) => [`Write(${ruta})`, `Edit(${ruta})`];
 const PROHIBIDO = [
-  "Write(./05_Busqueda_Empleo/01_Perfil/**)", "Edit(./05_Busqueda_Empleo/01_Perfil/**)",
-  "Write(./05_Busqueda_Empleo/05_Tracker/**)", "Edit(./05_Busqueda_Empleo/05_Tracker/**)",
-  "Write(./05_Busqueda_Empleo/**/aprobado/**)", "Edit(./05_Busqueda_Empleo/**/aprobado/**)",
-  "Write(./career_os/**)", "Edit(./career_os/**)", "Write(./.claude/**)", "Edit(./.claude/**)",
+  ...ambos(`${DATOS}/01_Perfil/**`), ...ambos(`${DATOS}/05_Tracker/**`), ...ambos(`${DATOS}/**/aprobado/**`),
+  ...ambos(`/${REPO}/career_os/**`), ...ambos(`/${REPO}/.claude/**`),
 ];
 
 /** Herramientas por tipo de corrida: solo borrador y enviar tocan el correo; solo aplicar edita el brain. */
@@ -30,8 +31,8 @@ export function herramientas(tipo: Tipo, destino?: string): { permitidas: string
     case "borrador": case "enviar": return { permitidas: [...BASE, ...COMPOSIO], prohibidas: PROHIBIDO };
     case "aplicar": {
       if (!destino || !/^(01_Perfil\/[\w-]+\.md|02_Configuracion\/ejes\/[\w-]+\.md)$/.test(destino)) throw new Error("Destino no permitido");
-      const f = `./05_Busqueda_Empleo/${destino}`;
-      return { permitidas: [...BASE, `Edit(${f})`, ...escribir], prohibidas: PROHIBIDO.filter((x) => !x.startsWith("Edit(./05_Busqueda_Empleo/01_Perfil")) };
+      const f = `${DATOS}/${destino}`;
+      return { permitidas: [...BASE, `Edit(${f})`, ...escribir], prohibidas: PROHIBIDO.filter((x) => !x.startsWith(`Edit(${DATOS}/01_Perfil`)) };
     }
   }
 }
@@ -127,6 +128,9 @@ export class Runner {
           else if (!x.pasos.some((p) => p.estado !== "pendiente")) {
             x.estado = "error";
             x.error = `Claude terminó sin reportar ningún paso. Su mensaje: ${(r.resultado ?? r.err ?? "").slice(0, 800)}`;
+          } else if (x.pasos.some((p) => p.estado === "error")) {
+            x.estado = "error";
+            x.error = x.pasos.filter((p) => p.estado === "error").map((p) => `${p.titulo}: ${p.detalle ?? "error"}`).join(" · ");
           } else x.estado = "esperando a David";
           return;
         }

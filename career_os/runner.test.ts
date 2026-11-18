@@ -106,11 +106,13 @@ test("I1: escritura limitada a 04_Postulaciones y brain/corridas/aprobado denega
   const a = argsClaude({ sessionId: "s", tipo: "chat" });
   expect(a).not.toContain("Write");
   expect(a).not.toContain("Edit");
-  expect(a).toContain("Edit(./05_Busqueda_Empleo/04_Postulaciones/**)");
+  const raiz = "/" + require("node:path").resolve(import.meta.dir, "..");
+  expect(a).toContain(`Edit(${raiz}/05_Busqueda_Empleo/04_Postulaciones/**)`);
+  expect(a).toContain(`Write(${raiz}/05_Busqueda_Empleo/04_Postulaciones/**)`);
   const deny = a.slice(a.indexOf("--disallowedTools") + 1).join(" ");
   for (const p of ["01_Perfil/**", "05_Tracker/**", "aprobado/**"]) expect(deny).toContain(p);
   const ap = argsClaude({ sessionId: "s", tipo: "aplicar", destino: "01_Perfil/cv_base.md" });
-  expect(ap).toContain("Edit(./05_Busqueda_Empleo/01_Perfil/cv_base.md)");
+  expect(ap).toContain(`Edit(${raiz}/05_Busqueda_Empleo/01_Perfil/cv_base.md)`);
 });
 
 test("I5: un binario inexistente no traba la cola", async () => {
@@ -167,4 +169,14 @@ test("los comandos permitidos aceptan ambas sintaxis de Bash", () => {
 test("el prompt explica cómo usar los comandos", () => {
   const p = promptArmar(crearCorrida(datosTemporales(), { tipo: "texto", valor: "x" }));
   expect(p).toContain("nunca antepongas `cd`");
+});
+
+
+test("un paso en error deja la corrida en error", async () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const r = runner(d, { CLAUDE_FALSO_MODO: "paso_error" });
+  r.encolar(c.run_id, "armar", promptArmar(c));
+  await r.esperar();
+  expect(leerCorrida(d, c.run_id).estado).toBe("error");
 });

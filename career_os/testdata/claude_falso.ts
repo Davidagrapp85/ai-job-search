@@ -12,6 +12,7 @@ const esChat = process.argv.includes("--resume") && !/Tarea: (crear el borrador|
 const datos = process.env.CAREER_OS_DATA ?? join(import.meta.dir, "..", "..", "05_Busqueda_Empleo");
 const carpeta = join(datos, "04_Postulaciones", "099_Prueba");
 const tracker = (...a: string[]) => Bun.spawnSync(["bun", cli, ...a], { env: process.env });
+if (modo === "paso_error" && runId) { Bun.spawnSync(["bun", cli, "paso", runId, "leer", "error", "--detalle", "Write denegado"], { env: process.env }); out({ type: "result", subtype: "success", result: "No pude." }); process.exit(0); }
 if (modo === "sin_pasos") { out({ type: "result", subtype: "success", result: "Postulación armada." }); process.exit(0); }
 if (runId && prompt.includes("Tarea: crear el borrador")) {
   tracker("borrador", runId, "--draft-id", "DRAFT-DEMO");
