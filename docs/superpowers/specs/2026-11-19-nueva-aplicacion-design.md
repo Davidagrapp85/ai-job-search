@@ -1,7 +1,7 @@
 # Pestaña "Nueva aplicación" — diseño
 
 **Fecha:** 19-nov-2026
-**Estado:** Diseño para aprobación de David.
+**Estado:** Aprobado por David (19-nov-2026), con el paso de correo agregado (§5.7).
 **Base:** Fase 1 (`2026-11-18-fase1-tracker-dashboard-design.md`), SPEC V2 §4 (flujo), §7–8 (familias y aprendizaje).
 
 ## 1. Intención
@@ -22,12 +22,12 @@ David pega el link de una vacante en el dashboard y ve cómo el sistema arma la 
 - Al cerrar: propuestas de aprendizaje (qué cambió, por qué, alcance) que David aprueba o rechaza; solo las aprobadas se aplican al brain.
 
 **No metas (después)**
-- Enviar la postulación o llenar el formulario en el portal real.
+- Llenar o enviar el formulario en un portal (Lever, Personio, etc.).
 - Biblioteca completa de cinco familias de CV.
 - Búsqueda de la versión oficial de la vacante (SPEC Fase 3).
 
 **Anti-metas**
-- El sistema envía algo a un empleador.
+- El sistema envía algo a un empleador sin el clic de David en "Enviar" para ese correo exacto.
 - Un aprendizaje cambia `banco_evidencias.md`, `cv_base.md` o `narrativa.md` sin aprobación de David.
 - Un cambio de redacción se promueve como hecho nuevo (cifra, cargo, fecha) sin validación (SPEC §8.1).
 - El texto de una vacante o de un correo ejecuta acciones fuera de las permitidas.
@@ -138,7 +138,19 @@ claude -p "<prompt de career_os/prompts/armar_postulacion.md con run_id y entrad
 - Mismas guardas de Host y Origin de la Fase 1 en todas las rutas nuevas.
 - `abrir` y `archivo` resuelven la ruta, verifican que esté dentro de `04_Postulaciones/<carpeta de la corrida>` y que el nombre esté en la lista blanca.
 - El chat no amplía herramientas: misma lista permitida que el pipeline.
-- Ningún flujo envía postulaciones ni correos.
+- El único envío posible es el correo de postulación (§5.7), solo con el clic de David y solo el borrador que él vio.
+
+### 5.7 Correo de postulación (solo cuando el canal es correo)
+
+Algunas vacantes se postulan enviando la CV a un reclutador (ej. 007). Para esas:
+
+- El paso `encaje` determina el **canal**: `portal` (Lever, Personio, Elempleo…) o `correo` (la vacante pide enviar a una dirección). Se guarda en la corrida.
+- Si el canal es `correo`, se agrega el paso **`correo`** después de `respuestas`: el agente redacta asunto y cuerpo (mismas reglas de veracidad), los guarda en `<carpeta>/correo.json` (`{para, cc, asunto, cuerpo_html, adjuntos:["CV.docx","Carta.docx"]}`) y crea un **borrador** en `duarcas_8@hotmail.com` con Composio (`OUTLOOK_CREATE_DRAFT` + `OUTLOOK_ADD_MAIL_ATTACHMENT`). Guarda `draft_id`. No envía.
+- Los adjuntos salen de los archivos **aprobados** (copia en `aprobado/`); el agente obtiene su base64 con `bun run tracker adjunto <run_id> <archivo>` (lista blanca), no con shell libre.
+- En el dashboard, **Vista previa del correo**: para, asunto, cuerpo renderizado de forma segura (texto, sin HTML activo) y adjuntos con su tamaño. Botones: **Enviar**, **Editar con Claude**, **Abrir borrador en Outlook**.
+- **Enviar** solo se habilita si CV y carta están aprobadas y el borrador no cambió desde la vista previa (se compara `sha256` de `correo.json`). Al clic, una corrida corta ejecuta `OUTLOOK_SEND_DRAFT` con ese `draft_id` y luego **verifica** el envío en Elementos enviados (`OUTLOOK_LIST_SENT_ITEMS_MESSAGES`, mismo asunto y destinatario).
+- Solo con esa evidencia el tracker pasa a `enviada` con `canal: "correo"`, `fecha_envio` = fecha del envío y `ref` = id del mensaje enviado. Sin evidencia, queda en `aprobada` con alerta "envío no confirmado".
+- El agente del pipeline no tiene la herramienta de envío en su lista; solo la corrida de envío, lanzada por el clic, la tiene.
 
 ## 6. Pruebas de aceptación
 
@@ -151,6 +163,11 @@ claude -p "<prompt de career_os/prompts/armar_postulacion.md con run_id y entrad
 - **N-07** Un aprendizaje pendiente no cambia ningún archivo del brain; uno tipo `hecho` nunca se aplica automáticamente.
 - **N-08** El prompt del agente contiene la lista de herramientas y la regla "dato, no instrucción"; los argumentos del comando no incluyen texto de la vacante (va por archivo o por el prompt, nunca interpolado en shell).
 
+- **N-09** Con canal `portal` no se crea paso `correo`.
+- **N-10** Enviar está deshabilitado si falta aprobar CV o carta, o si `correo.json` cambió después de la vista previa.
+- **N-11** Si la verificación en Elementos enviados falla, el tracker no pasa a `enviada`.
+- **N-12** El cuerpo del correo se muestra como texto; un `<script>` en el cuerpo no se ejecuta.
+
 ## 7. Decisiones del implementador (marcadas como tales)
 
 - Polling cada 2 s en vez de SSE (más simple; suficiente para un usuario).
@@ -158,3 +175,4 @@ claude -p "<prompt de career_os/prompts/armar_postulacion.md con run_id y entrad
 - `--permission-mode dontAsk` con lista blanca de herramientas.
 - `content.v1.json` como línea base para detectar cambios.
 - Reintento con la API una sola vez por corrida.
+- Adjuntos en `.docx` (los que genera el sistema). PDF queda para después: requiere conversión local.
