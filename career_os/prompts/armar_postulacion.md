@@ -30,7 +30,7 @@ Antes de empezar un paso: `bun run tracker paso {{run_id}} <paso> "en curso"`. A
 | `carta` | Carta en el mismo `content.json` | `--archivo Carta.docx` |
 | `respuestas` | Respuestas probables del formulario en `respuestas.md` (si no hay formulario, preguntas típicas del cargo) | `--archivo respuestas.md` |
 | `correo` | Solo si el canal es `correo`: redacta `correo.json` (`{"para":[…],"cc":[],"asunto":"…","cuerpo_html":"…","adjuntos":["CV.docx","Carta.docx"]}`). No crees el borrador | `--archivo correo.json` |
-| `registro` | `bun run tracker upsert --json-file <archivo> --causa "Nueva aplicación {{run_id}}"` con estado `en preparación`; anota el `application_id` | `--application-id APP-…` |
+| `registro` | Escribe la fila en `<carpeta>/_fila.json` y corre `bun run tracker upsert --json-file 05_Busqueda_Empleo/<carpeta>/_fila.json --causa "Nueva aplicación {{run_id}}"` con estado `en preparación`; anota el `application_id` | `--application-id APP-…` |
 
 Copia `content.json` a `content.v1.json` en la carpeta apenas generes los documentos por primera vez.
 

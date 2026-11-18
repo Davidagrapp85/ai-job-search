@@ -18,9 +18,14 @@ export function htmlATexto(html: string): string {
 
 function motivoNoEnviar(d: string | undefined, c: Corrida, sha: string): string | undefined {
   if (c.canal !== "correo") return "Esta vacante no se postula por correo";
-  if (c.estado === "enviada") return "Ya se envió";
+  if (c.estado === "enviada" || c.envio) return "Ya se envió";
+  if (c.envio_solicitado) return "El envío ya se solicitó; revisa Elementos enviados antes de reintentar";
   const fresca = refrescarDocumentos(d, c);
   if (fresca.documentos.cv.estado !== "aprobado" || fresca.documentos.carta.estado !== "aprobado") return "Aprueba la CV y la carta (vigentes) antes de enviar";
+  for (const k of ["cv", "carta"] as const) {
+    const ap = join(carpetaAbs(d, c.carpeta!), "aprobado", fresca.documentos[k].archivo);
+    if (!existsSync(ap) || sha256(ap) !== fresca.documentos[k].sha256) return `La copia aprobada de ${fresca.documentos[k].archivo} cambió; apruébala de nuevo`;
+  }
   if (!c.draft_id) return "Falta crear el borrador en Outlook";
   if (c.sha256_borrador !== sha) return "El correo cambió después de crear el borrador; vuelve a crearlo";
   return undefined;
@@ -51,12 +56,16 @@ export function registrarBorrador(d: string | undefined, runId: string, draftId:
 }
 
 export function solicitarEnvio(d: string | undefined, runId: string, shaVisto: string): Corrida {
-  const c = leerCorrida(d, runId);
-  const sha = sha256(rutaSegura(d, c, "correo.json"));
+  const c0 = refrescarDocumentos(d, leerCorrida(d, runId));
+  const sha = sha256(rutaSegura(d, c0, "correo.json"));
   if (sha !== shaVisto) throw new Error("El correo cambió desde la vista previa; revísalo de nuevo");
-  const motivo = motivoNoEnviar(d, c, sha);
+  const motivo = motivoNoEnviar(d, c0, sha);
   if (motivo) throw new Error(motivo);
-  return actualizarCorrida(d, runId, (x) => { x.envio_solicitado = { at: new Date().toISOString(), sha256_correo: sha }; });
+  // Verificar y marcar dentro del mismo bloqueo: dos clics no producen dos envíos.
+  return actualizarCorrida(d, runId, (x) => {
+    if (x.envio_solicitado || x.envio) throw new Error("El envío ya se solicitó");
+    x.envio_solicitado = { at: new Date().toISOString(), sha256_correo: sha };
+  });
 }
 
 export function confirmarEnvio(d: string | undefined, runId: string, messageId: string, fecha: string): Corrida {

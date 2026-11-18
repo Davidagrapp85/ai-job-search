@@ -49,6 +49,9 @@ test("adjunto solo de aprobado/", () => {
   writeFileSync(join(dir, "CV.docx"), "borrador");
   expect(() => adjunto(d, c.run_id, "CV.docx")).toThrow("no está aprobado");
   writeFileSync(join(dir, "aprobado", "CV.docx"), "hola");
+  expect(() => adjunto(d, c.run_id, "CV.docx")).toThrow("cambió después de aprobarlo");
+  writeFileSync(join(dir, "CV.docx"), "hola");
+  require("./docs").aprobarDocumento(d, c.run_id, "cv");
   expect(adjunto(d, c.run_id, "CV.docx")).toMatchObject({ nombre: "CV.docx", base64: Buffer.from("hola").toString("base64") });
   expect(() => adjunto(d, c.run_id, "../../05_Tracker/postulaciones.csv")).toThrow("Archivo no permitido");
 });

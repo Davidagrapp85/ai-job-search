@@ -34,7 +34,8 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
     const r = resolverAprendizaje(d, ml[1], ml[2] === "solo-vacante" ? "solo vacante" : (ml[2] as "aprobar" | "rechazar"));
     if (r.aplicar) {
       const a = r.aprendizaje;
-      ctx.runner.encolar(a.run_id, "aplicar", plantilla("aplicar_aprendizaje.md", { learning_id: a.learning_id, destino: a.destino, tipo: a.tipo, alcance: a.alcance, antes: a.antes, despues: a.despues, motivo: a.motivo }));
+      const carpeta = (() => { try { return leerCorrida(d, a.run_id).carpeta ?? ""; } catch { return ""; } })();
+      ctx.runner.encolar(a.run_id, "aplicar", plantilla("aplicar_aprendizaje.md", { learning_id: a.learning_id, destino: a.destino, tipo: a.tipo, alcance: a.alcance, antes: a.antes, despues: a.despues, motivo: a.motivo, carpeta }), a.destino);
     }
     return json(r.aprendizaje);
   }
@@ -77,7 +78,10 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
     case "correo/enviar": {
       const c = solicitarEnvio(d, id, b.sha256 ?? "");
       const v = vistaCorreo(d, id);
-      ctx.runner.encolar(id, "enviar", plantilla("enviar_correo.md", { run_id: id, draft_id: c.draft_id ?? "", asunto: v.asunto, para: v.para.join(", ") }));
+      ctx.runner.encolar(id, "enviar", plantilla("enviar_correo.md", {
+        run_id: id, draft_id: c.draft_id ?? "", asunto: v.asunto, para: v.para.join(", "), cc: v.cc.join(", ") || "(ninguno)",
+        adjuntos: v.adjuntos.map((a) => `${a.nombre} (${a.bytes} bytes)`).join(", "), cuerpo: v.cuerpo_texto,
+      }));
       return json({ ok: true });
     }
     case "cerrar": {

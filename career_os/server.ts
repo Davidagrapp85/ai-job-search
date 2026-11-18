@@ -6,7 +6,7 @@ import type { Estado } from "./model";
 import { leerEventos, leerFilas, leerPropuestas } from "./store";
 import { editar, resolverPropuesta, setEstado } from "./tracker";
 import { rutasCorridas } from "./api_runs";
-import { Runner } from "./runner";
+import { recuperarHuerfanas, Runner } from "./runner";
 
 const PUBLIC = resolve(import.meta.dir, "public");
 const json = (data: unknown, status = 200) => Response.json(data, { status });
@@ -78,6 +78,7 @@ export function crearManejador(opts: { dataDir?: string; port: () => number; run
 }
 
 export function crearServidor(opts: { dataDir?: string; port?: number } = {}) {
+  recuperarHuerfanas(opts.dataDir);
   let server: ReturnType<typeof Bun.serve>;
   const manejar = crearManejador({ dataDir: opts.dataDir, port: () => server.port });
   server = Bun.serve({ hostname: "127.0.0.1", port: opts.port ?? Number(process.env.CAREER_OS_PORT ?? 4173), fetch: manejar });

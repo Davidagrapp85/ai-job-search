@@ -119,6 +119,9 @@ export function adjunto(d: string | undefined, id: string, nombre: string): { no
   if (!c.carpeta) throw new Error("La corrida no tiene carpeta");
   const f = join(carpetaAbs(d, c.carpeta), "aprobado", nombre);
   if (!existsSync(f)) throw new Error(`${nombre} no está aprobado`);
+  const doc = Object.values(c.documentos).find((x) => x.archivo === nombre);
+  const huella = new Bun.CryptoHasher("sha256").update(readFileSync(f)).digest("hex");
+  if (!doc || doc.estado !== "aprobado" || doc.sha256 !== huella) throw new Error(`${nombre} cambió después de aprobarlo; apruébalo de nuevo`);
   const mime = nombre.endsWith(".docx") ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "text/plain";
   return { nombre, mime, base64: readFileSync(f).toString("base64") };
 }

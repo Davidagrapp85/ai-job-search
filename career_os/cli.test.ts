@@ -65,3 +65,18 @@ test("paso y adjunto por CLI", () => {
   expect(JSON.parse(r.out).pasos.some((p: any) => p.id === "correo")).toBe(true);
   expect(run(d, "paso", c.run_id, "leer", "hecho").err).toContain("Estado de paso");
 });
+
+test("I6: el agente solo puede reportar su propia corrida y su propio tipo", () => {
+  const d = datosTemporales();
+  const { crearCorrida } = require("./runs");
+  const a = crearCorrida(d, { tipo: "texto", valor: "a" });
+  const b = crearCorrida(d, { tipo: "texto", valor: "b" });
+  const comoAgente = (runId: string, tipo: string, ...args: string[]) => {
+    const r = Bun.spawnSync(["bun", CLI, ...args], { env: { ...process.env, CAREER_OS_DATA: d, CAREER_OS_RUN_ID: runId, CAREER_OS_RUN_TIPO: tipo } });
+    return { code: r.exitCode, err: r.stderr.toString() };
+  };
+  expect(comoAgente(a.run_id, "armar", "paso", b.run_id, "leer", "listo").err).toContain("otra corrida");
+  expect(comoAgente(a.run_id, "armar", "paso", a.run_id, "leer", "listo").code).toBe(0);
+  expect(comoAgente(a.run_id, "armar", "confirmar-envio", a.run_id, "--message-id", "m", "--fecha", "2026-11-19").err).toContain("solo en la corrida de envío");
+  expect(comoAgente(a.run_id, "chat", "borrador", a.run_id, "--draft-id", "x").err).toContain("solo en la corrida de borrador");
+});

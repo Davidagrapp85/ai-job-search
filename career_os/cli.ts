@@ -54,6 +54,16 @@ function main(argv: string[]): unknown {
   const causa = () => { if (!v.causa) throw new Error("Falta --causa"); return v.causa; };
   const actor = (v.actor ?? "claude") as Actor;
   if (!["claude", "david"].includes(actor)) throw new Error("--actor debe ser claude o david");
+  const agente = process.env.CAREER_OS_RUN_ID;
+  const tipoAgente = process.env.CAREER_OS_RUN_TIPO;
+  const soloMiCorrida = (id: string) => { if (agente && id !== agente) throw new Error("No puedes escribir en otra corrida"); };
+  const exigeTipo = (tipo: string, cmdNombre: string) => {
+    if (tipoAgente !== tipo) throw new Error(`${cmdNombre} se usa solo en la corrida de ${tipo === "enviar" ? "envío" : tipo}`);
+  };
+  if (["paso", "adjunto", "borrador", "confirmar-envio"].includes(cmd)) soloMiCorrida(args[0] ?? "");
+  if (cmd === "adjunto" || cmd === "borrador") exigeTipo("borrador", cmd);
+  if (cmd === "confirmar-envio") exigeTipo("enviar", cmd);
+  if (cmd === "aprendizaje-aplicado") exigeTipo("aplicar", cmd);
   switch (cmd) {
     case "list": {
       const filas = leerFilas().filas;
@@ -92,8 +102,11 @@ function main(argv: string[]): unknown {
     case "confirmar-envio":
       if (!args[0] || !v["message-id"] || !v.fecha) throw new Error("Uso: confirmar-envio <run_id> --message-id X --fecha AAAA-MM-DD");
       return confirmarEnvio(undefined, args[0], v["message-id"], v.fecha);
-    case "aprendizaje":
-      return proponerAprendizaje(undefined, leerJson());
+    case "aprendizaje": {
+      const a = leerJson();
+      if (agente && a.run_id !== agente) throw new Error("No puedes escribir en otra corrida");
+      return proponerAprendizaje(undefined, a);
+    }
     case "aprendizaje-aplicado":
       if (!args[0] || !v["diff-file"]) throw new Error("Uso: aprendizaje-aplicado <learning_id> --diff-file X");
       return marcarAplicado(undefined, args[0], readFileSync(v["diff-file"], "utf8"));

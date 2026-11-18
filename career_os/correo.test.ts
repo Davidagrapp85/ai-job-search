@@ -74,3 +74,25 @@ test("envío confirmado marca enviada con canal correo", () => {
   expect(leerFilas(d).filas[1]).toMatchObject({ estado: "enviada", canal: "correo", fecha_envio: "2026-11-19" });
   expect(leerCorrida(d, id).estado).toBe("enviada");
 });
+
+test("I2: un adjunto aprobado alterado bloquea el envío y el adjunto", () => {
+  const { d, id, dir } = corrida("correo");
+  aprobarDocumento(d, id, "cv");
+  aprobarDocumento(d, id, "carta");
+  registrarBorrador(d, id, "DRAFT-1");
+  writeFileSync(join(dir, "aprobado", "CV.docx"), "alterado");
+  expect(vistaCorreo(d, id).puedeEnviar).toBe(false);
+  const { adjunto } = require("./runs");
+  expect(() => adjunto(d, id, "CV.docx")).toThrow("cambió");
+});
+
+test("I4: no se puede solicitar el envío dos veces", () => {
+  const { d, id } = corrida("correo");
+  aprobarDocumento(d, id, "cv");
+  aprobarDocumento(d, id, "carta");
+  registrarBorrador(d, id, "DRAFT-1");
+  const sha = vistaCorreo(d, id).sha256;
+  solicitarEnvio(d, id, sha);
+  expect(() => solicitarEnvio(d, id, sha)).toThrow("ya");
+  expect(vistaCorreo(d, id).puedeEnviar).toBe(false);
+});

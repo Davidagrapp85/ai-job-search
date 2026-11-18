@@ -93,3 +93,56 @@ test("al terminar el chat el documento en trabajo vuelve a por revisar", async (
   await r.esperar();
   expect(leerCorrida(d, c.run_id).documentos.cv.estado).toBe("por revisar");
 });
+
+test("C1: solo borrador y enviar tienen Composio", () => {
+  for (const tipo of ["armar", "chat", "aprendizajes", "aplicar"] as const) {
+    expect(argsClaude({ sessionId: "s", tipo, destino: "01_Perfil/cv_base.md" }).join(" ")).not.toContain("composio");
+  }
+  expect(argsClaude({ sessionId: "s", tipo: "borrador" }).join(" ")).toContain("mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL");
+  expect(argsClaude({ sessionId: "s", tipo: "enviar" }).join(" ")).toContain("mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL");
+});
+
+test("I1: escritura limitada a 04_Postulaciones y brain/corridas/aprobado denegados", () => {
+  const a = argsClaude({ sessionId: "s", tipo: "chat" });
+  expect(a).not.toContain("Write");
+  expect(a).not.toContain("Edit");
+  expect(a).toContain("Edit(./05_Busqueda_Empleo/04_Postulaciones/**)");
+  const deny = a.slice(a.indexOf("--disallowedTools") + 1).join(" ");
+  for (const p of ["01_Perfil/**", "05_Tracker/**", "aprobado/**"]) expect(deny).toContain(p);
+  const ap = argsClaude({ sessionId: "s", tipo: "aplicar", destino: "01_Perfil/cv_base.md" });
+  expect(ap).toContain("Edit(./05_Busqueda_Empleo/01_Perfil/cv_base.md)");
+});
+
+test("I5: un binario inexistente no traba la cola", async () => {
+  const d = datosTemporales();
+  const a = crearCorrida(d, { tipo: "texto", valor: "a" });
+  const b = crearCorrida(d, { tipo: "texto", valor: "b" });
+  const r = new Runner({ dataDir: d, bin: "/no/existe/claude" });
+  r.encolar(a.run_id, "armar", promptArmar(a));
+  r.encolar(b.run_id, "armar", promptArmar(b));
+  await r.esperar();
+  expect(leerCorrida(d, a.run_id).estado).toBe("error");
+  expect(leerCorrida(d, b.run_id).estado).toBe("error");
+  expect(r.activo()).toBeNull();
+});
+
+test("I5: huérfanas tras reinicio quedan en error", async () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const { recuperarHuerfanas } = await import("./runner");
+  expect(recuperarHuerfanas(d)).toBe(1);
+  expect(leerCorrida(d, c.run_id)).toMatchObject({ estado: "error" });
+});
+
+test("I4: un error en una corrida que no es armar no cambia el estado", async () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const { actualizarCorrida } = await import("./runs");
+  actualizarCorrida(d, c.run_id, (x) => { x.estado = "enviada"; });
+  const r = runner(d, { CLAUDE_FALSO_MODO: "error" });
+  r.encolar(c.run_id, "aprendizajes", "x");
+  await r.esperar();
+  const f = leerCorrida(d, c.run_id);
+  expect(f.estado).toBe("enviada");
+  expect(f.error).toContain("aprendizajes");
+});
