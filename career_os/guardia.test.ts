@@ -64,3 +64,9 @@ test("Composio solo en borrador y enviar; web solo en armar", () => {
   expect(decidir({ tool_name: "mcp__claude_ai_Gmail__send_message", tool_input: {} }, ent("enviar")).permitir).toBe(false);
   expect(decidir({ tool_name: "Task", tool_input: {} }, ent("armar")).permitir).toBe(false);
 });
+
+test("armar puede leer la web con el agente web-fetch y nada más", () => {
+  expect(decidir({ tool_name: "Agent", tool_input: { subagent_type: "web-fetch" } }, ent("armar")).permitir).toBe(true);
+  expect(decidir({ tool_name: "Agent", tool_input: { subagent_type: "general-purpose" } }, ent("armar")).permitir).toBe(false);
+  expect(decidir({ tool_name: "Agent", tool_input: { subagent_type: "web-fetch" } }, ent("chat")).permitir).toBe(false);
+});

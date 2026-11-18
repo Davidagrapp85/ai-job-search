@@ -32,6 +32,10 @@ export function decidir(evento: { tool_name?: string; tool_input?: Record<string
     return { permitir: false, motivo: "Solo se permiten `bun run tracker …` y build_docs.js; explora con Read, Glob y Grep" };
   }
   if (COMPOSIO.has(nombre)) return ["borrador", "enviar"].includes(tipo) ? { permitir: true } : { permitir: false, motivo: `La corrida ${tipo} no usa el correo` };
+  // En este equipo WebFetch se hace a través del agente "web-fetch" (solo lectura de páginas).
+  if (nombre === "Agent" || nombre === "Task") {
+    return tipo === "armar" && evento.tool_input?.subagent_type === "web-fetch" ? { permitir: true } : { permitir: false, motivo: "Solo la corrida armar puede usar el agente web-fetch" };
+  }
   if (nombre === "WebFetch" || nombre === "WebSearch") return tipo === "armar" ? { permitir: true } : { permitir: false, motivo: "Solo la corrida armar consulta la web" };
   if (!ESCRIBEN.has(nombre)) return { permitir: false, motivo: `Herramienta no permitida: ${nombre}` };
   const ruta = evento.tool_input?.file_path ?? evento.tool_input?.notebook_path;
