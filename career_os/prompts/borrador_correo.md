@@ -9,3 +9,5 @@ David aprobó la CV y la carta. Crea el **borrador** (no lo envíes) del correo 
 5. Registra: `bun run tracker borrador {{run_id}} --draft-id <id>` y `bun run tracker paso {{run_id}} correo listo --detalle "Borrador listo para revisar"`.
 
 **Nunca** uses `OUTLOOK_SEND_DRAFT` ni `OUTLOOK_SEND_EMAIL` en esta tarea. Si algo falla, `bun run tracker paso {{run_id}} correo error --detalle "<qué falló>"`.
+
+Comandos: ya estás en `~/05_ai_job_search`; corre cada `bun run tracker …` solo, sin `cd`, `&&`, `;` ni `|`. Explora con Read, Glob y Grep.

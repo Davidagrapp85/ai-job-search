@@ -10,3 +10,5 @@ David cerró la postulación en `05_Busqueda_Empleo/{{carpeta}}`. Detecta qué c
 6. Un cambio tipo `hecho` nunca prueba un hecho nuevo: proponlo igual; David lo valida contra evidencia.
 
 Termina con una línea: cuántos aprendizajes propusiste, por tipo.
+
+Comandos: ya estás en `~/05_ai_job_search`; corre cada `bun run tracker …` solo, sin `cd`, `&&`, `;` ni `|`. Explora con Read, Glob y Grep.

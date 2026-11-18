@@ -10,3 +10,5 @@ David está revisando el documento **{{documento}}** de la postulación en `{{ca
 <mensaje>
 {{mensaje}}
 </mensaje>
+
+Comandos: ya estás en `~/05_ai_job_search`; corre cada `bun run tracker …` solo, sin `cd`, `&&`, `;` ni `|`. Explora con Read, Glob y Grep.

@@ -9,7 +9,7 @@ export type Tipo = "armar" | "chat" | "aprendizajes" | "enviar" | "borrador" | "
 const LIMITE = /usage limit|rate limit|limit reached|quota/i;
 const TIMEOUT_MS = 20 * 60_000;
 const POSTULACIONES = "./05_Busqueda_Empleo/04_Postulaciones/**";
-const BASE = ["Read", "Glob", "Grep", "Skill", "Bash(bun run tracker:*)"];
+const BASE = ["Read", "Glob", "Grep", "Skill", "Bash(bun run tracker:*)", "Bash(bun run tracker *)"];
 const COMPOSIO = ["mcp__composio__COMPOSIO_SEARCH_TOOLS", "mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL"];
 const PROHIBIDO = [
   "Write(./05_Busqueda_Empleo/01_Perfil/**)", "Edit(./05_Busqueda_Empleo/01_Perfil/**)",
@@ -21,10 +21,11 @@ const PROHIBIDO = [
 /** Herramientas por tipo de corrida: solo borrador y enviar tocan el correo; solo aplicar edita el brain. */
 export function herramientas(tipo: Tipo, destino?: string): { permitidas: string[]; prohibidas: string[] } {
   const escribir = [`Write(${POSTULACIONES})`, `Edit(${POSTULACIONES})`];
-  const docs = "Bash(node 05_Busqueda_Empleo/07_Skills/empleo-armar-postulacion/build_docs.js:*)";
+  const docsCmd = "node 05_Busqueda_Empleo/07_Skills/empleo-armar-postulacion/build_docs.js";
+  const docs = [`Bash(${docsCmd}:*)`, `Bash(${docsCmd} *)`];
   switch (tipo) {
-    case "armar": return { permitidas: [...BASE, ...escribir, docs, "WebFetch", "WebSearch"], prohibidas: PROHIBIDO };
-    case "chat": return { permitidas: [...BASE, ...escribir, docs], prohibidas: PROHIBIDO };
+    case "armar": return { permitidas: [...BASE, ...escribir, ...docs, "WebFetch", "WebSearch"], prohibidas: PROHIBIDO };
+    case "chat": return { permitidas: [...BASE, ...escribir, ...docs], prohibidas: PROHIBIDO };
     case "aprendizajes": return { permitidas: [...BASE, ...escribir], prohibidas: PROHIBIDO };
     case "borrador": case "enviar": return { permitidas: [...BASE, ...COMPOSIO], prohibidas: PROHIBIDO };
     case "aplicar": {
@@ -123,7 +124,10 @@ export class Runner {
         if (t.tipo === "armar") {
           if (cancelado) x.estado = "cancelada";
           else if (r.code !== 0) { x.estado = "error"; x.error = (r.err || r.out).slice(-500); }
-          else x.estado = "esperando a David";
+          else if (!x.pasos.some((p) => p.estado !== "pendiente")) {
+            x.estado = "error";
+            x.error = `Claude terminó sin reportar ningún paso. Su mensaje: ${(r.resultado ?? r.err ?? "").slice(0, 800)}`;
+          } else x.estado = "esperando a David";
           return;
         }
         // Otros tipos nunca cambian el estado de la corrida: solo registran su error.

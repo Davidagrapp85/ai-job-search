@@ -146,3 +146,25 @@ test("I4: un error en una corrida que no es armar no cambia el estado", async ()
   expect(f.estado).toBe("enviada");
   expect(f.error).toContain("aprendizajes");
 });
+
+test("armar que termina sin reportar pasos queda en error con el mensaje de Claude", async () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const r = runner(d, { CLAUDE_FALSO_MODO: "sin_pasos" });
+  r.encolar(c.run_id, "armar", promptArmar(c));
+  await r.esperar();
+  const f = leerCorrida(d, c.run_id);
+  expect(f.estado).toBe("error");
+  expect(f.error).toContain("Postulación armada");
+});
+
+test("los comandos permitidos aceptan ambas sintaxis de Bash", () => {
+  const a = argsClaude({ sessionId: "s", tipo: "armar" });
+  expect(a).toContain("Bash(bun run tracker:*)");
+  expect(a).toContain("Bash(bun run tracker *)");
+});
+
+test("el prompt explica cómo usar los comandos", () => {
+  const p = promptArmar(crearCorrida(datosTemporales(), { tipo: "texto", valor: "x" }));
+  expect(p).toContain("nunca antepongas `cd`");
+});
