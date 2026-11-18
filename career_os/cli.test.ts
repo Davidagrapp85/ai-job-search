@@ -55,3 +55,13 @@ test("propose lee JSON de archivo sin pasar por el shell", () => {
   expect(r.code).toBe(0);
   expect(JSON.parse(r.out).evidencia.asunto).toBe("Let's talk'; rm -rf /");
 });
+
+test("paso y adjunto por CLI", () => {
+  const d = datosTemporales();
+  const { crearCorrida } = require("./runs");
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const r = run(d, "paso", c.run_id, "encaje", "listo", "--canal", "correo", "--detalle", "52/100");
+  expect(r.code).toBe(0);
+  expect(JSON.parse(r.out).pasos.some((p: any) => p.id === "correo")).toBe(true);
+  expect(run(d, "paso", c.run_id, "leer", "hecho").err).toContain("Estado de paso");
+});

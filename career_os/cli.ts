@@ -4,6 +4,7 @@ import { parseArgs } from "node:util";
 import { type Actor, type Estado } from "./model";
 import { leerFilas } from "./store";
 import { editar, proponer, setEstado, upsert } from "./tracker";
+import { adjunto, type EstadoPaso, reportarPaso } from "./runs";
 
 const AYUDA = `Uso: bun run tracker <comando> [opciones]
   list [--estado X]
@@ -12,6 +13,8 @@ const AYUDA = `Uso: bun run tracker <comando> [opciones]
   upsert --json '<fila parcial>' --causa "…"
   propose --json-file <ruta.json>   (o --json '<…>'; los agentes usan --json-file)
   pendientes [--hoy AAAA-MM-DD]
+  paso <run_id> <paso_id> <pendiente|en curso|listo|alerta|error> [--detalle] [--archivo] [--carpeta] [--application-id] [--canal portal|correo]
+  adjunto <run_id> <archivo>   (base64 de un archivo aprobado de la corrida)
 <id> acepta application_id (APP-0001) o numero (001, D002).`;
 
 export const FINALES = new Set(["descartada", "rechazada", "cerrada"]);
@@ -30,6 +33,8 @@ function main(argv: string[]): unknown {
       "fecha-envio": { type: "string" }, actor: { type: "string" }, json: { type: "string" },
       "proxima-accion": { type: "string" }, "fecha-proxima": { type: "string" }, notas: { type: "string" },
       hoy: { type: "string" }, help: { type: "boolean" }, "json-file": { type: "string" },
+      detalle: { type: "string" }, archivo: { type: "string" }, carpeta: { type: "string" },
+      "application-id": { type: "string" },
     },
   });
   const [cmd, ...args] = p;
@@ -65,6 +70,15 @@ function main(argv: string[]): unknown {
       const limite = sumarDias(hoy, 7);
       return leerFilas().filas.filter((f) => !FINALES.has(f.estado) && f.fecha_proxima && f.fecha_proxima <= limite);
     }
+    case "paso":
+      if (args.length < 3) throw new Error("Uso: paso <run_id> <paso_id> <estado>");
+      return reportarPaso(undefined, args[0], args[1], args[2] as EstadoPaso, {
+        detalle: v.detalle, archivo: v.archivo, carpeta: v.carpeta, applicationId: v["application-id"],
+        canal: v.canal as "portal" | "correo" | undefined,
+      });
+    case "adjunto":
+      if (args.length < 2) throw new Error("Uso: adjunto <run_id> <archivo>");
+      return adjunto(undefined, args[0], args[1]);
     default:
       throw new Error(`Comando desconocido: ${cmd}\n${AYUDA}`);
   }

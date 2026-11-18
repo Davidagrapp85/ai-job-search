@@ -20,6 +20,9 @@ export function rutas(dataDir?: string) {
     respaldos: join(base, "respaldos"),
     lock: join(base, ".tracker.lock"),
     estadoAgente: join(base, "agente_correo_estado.json"),
+    corridas: join(base, "corridas"),
+    raiz: join(base, ".."),
+    aprendizajes: join(base, "..", "09_Aprendizajes"),
   };
 }
 
