@@ -21,7 +21,8 @@ const PROHIBIDO = [
 
 /** Herramientas por tipo de corrida: solo borrador y enviar tocan el correo; solo aplicar edita el brain. */
 export function herramientas(tipo: Tipo, destino?: string): { permitidas: string[]; prohibidas: string[] } {
-  const escribir = [`Write(${POSTULACIONES})`, `Edit(${POSTULACIONES})`];
+  // Las rutas permitidas las decide career_os/guardia.ts (hook PreToolUse), no reglas de ruta.
+  const escribir = ["Write", "Edit"];
   const docsCmd = "node 05_Busqueda_Empleo/07_Skills/empleo-armar-postulacion/build_docs.js";
   const docs = [`Bash(${docsCmd}:*)`, `Bash(${docsCmd} *)`];
   switch (tipo) {
@@ -32,15 +33,17 @@ export function herramientas(tipo: Tipo, destino?: string): { permitidas: string
     case "aplicar": {
       if (!destino || !/^(01_Perfil\/[\w-]+\.md|02_Configuracion\/ejes\/[\w-]+\.md)$/.test(destino)) throw new Error("Destino no permitido");
       const f = `${DATOS}/${destino}`;
-      return { permitidas: [...BASE, `Edit(${f})`, ...escribir], prohibidas: PROHIBIDO.filter((x) => !x.startsWith(`Edit(${DATOS}/01_Perfil`)) };
+      void f;
+      return { permitidas: [...BASE, ...escribir], prohibidas: PROHIBIDO.filter((x) => !x.startsWith(`Edit(${DATOS}/01_Perfil`)) };
     }
   }
 }
 
 export function argsClaude(o: { sessionId: string; resume?: boolean; tipo?: Tipo; destino?: string }): string[] {
   const h = herramientas(o.tipo ?? "armar", o.destino);
-  return ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "dontAsk",
-    o.resume ? "--resume" : "--session-id", o.sessionId,
+  const guardia = { hooks: { PreToolUse: [{ matcher: "*", hooks: [{ type: "command", command: `bun ${JSON.stringify(join(REPO, "career_os", "guardia.ts"))}` }] }] } };
+  return ["-p", "--output-format", "stream-json", "--verbose", "--permission-mode", process.env.CAREER_OS_PERMISSION_MODE ?? "bypassPermissions",
+    o.resume ? "--resume" : "--session-id", o.sessionId, "--settings", JSON.stringify(guardia),
     "--allowedTools", ...h.permitidas, "--disallowedTools", ...h.prohibidas];
 }
 
@@ -103,6 +106,8 @@ export class Runner {
     if (this.o.dataDir) env.CAREER_OS_DATA = this.o.dataDir;
     env.CAREER_OS_RUN_ID = t.runId;
     env.CAREER_OS_RUN_TIPO = t.tipo;
+    if (t.destino) env.CAREER_OS_DESTINO = t.destino;
+    if (!env.CAREER_OS_DATA) env.CAREER_OS_DATA = join(REPO, "05_Busqueda_Empleo");
     if (!conApi) delete env.ANTHROPIC_API_KEY;
     return env;
   }

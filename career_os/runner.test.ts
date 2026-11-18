@@ -102,17 +102,15 @@ test("C1: solo borrador y enviar tienen Composio", () => {
   expect(argsClaude({ sessionId: "s", tipo: "enviar" }).join(" ")).toContain("mcp__composio__COMPOSIO_MULTI_EXECUTE_TOOL");
 });
 
-test("I1: escritura limitada a 04_Postulaciones y brain/corridas/aprobado denegados", () => {
+test("I1: las escrituras pasan por el guardián", () => {
   const a = argsClaude({ sessionId: "s", tipo: "chat" });
-  expect(a).not.toContain("Write");
-  expect(a).not.toContain("Edit");
-  const raiz = "/" + require("node:path").resolve(import.meta.dir, "..");
-  expect(a).toContain(`Edit(${raiz}/05_Busqueda_Empleo/04_Postulaciones/**)`);
-  expect(a).toContain(`Write(${raiz}/05_Busqueda_Empleo/04_Postulaciones/**)`);
-  const deny = a.slice(a.indexOf("--disallowedTools") + 1).join(" ");
-  for (const p of ["01_Perfil/**", "05_Tracker/**", "aprobado/**"]) expect(deny).toContain(p);
-  const ap = argsClaude({ sessionId: "s", tipo: "aplicar", destino: "01_Perfil/cv_base.md" });
-  expect(ap).toContain(`Edit(${raiz}/05_Busqueda_Empleo/01_Perfil/cv_base.md)`);
+  expect(a).toContain("Write");
+  const settings = JSON.parse(a[a.indexOf("--settings") + 1]);
+  const hook = settings.hooks.PreToolUse[0];
+  expect(hook.matcher).toBe("*");
+  expect(a[a.indexOf("--permission-mode") + 1]).toBe("bypassPermissions");
+  expect(hook.hooks[0].command).toContain("career_os/guardia.ts");
+  expect(argsClaude({ sessionId: "s", tipo: "enviar" })).not.toContain("Write");
 });
 
 test("I5: un binario inexistente no traba la cola", async () => {
