@@ -1,1 +1,76 @@
-<!doctype html><title>Career OS</title>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Career OS</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="top">
+  <h1>Career OS</h1>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-resumen" aria-selected="true" aria-controls="p-resumen">Resumen</button>
+    <button role="tab" id="t-vacantes" aria-selected="false" aria-controls="p-vacantes">Vacantes</button>
+    <button role="tab" id="t-aprobar" aria-selected="false" aria-controls="p-aprobar">Por aprobar <span class="badge" id="nprop" hidden></span></button>
+  </nav>
+</header>
+<main>
+  <p class="aviso" id="aviso" role="status" hidden></p>
+
+  <section id="p-resumen" role="tabpanel" aria-labelledby="t-resumen">
+    <div class="kpis" id="kpis"></div>
+    <h2>Embudo</h2>
+    <div class="embudo" id="embudo"></div>
+  </section>
+
+  <section id="p-vacantes" role="tabpanel" aria-labelledby="t-vacantes" hidden>
+    <div class="filtros">
+      <label>Empresa <input id="f-empresa" type="search" placeholder="Buscar"></label>
+      <label>Eje <select id="f-eje"><option value="">Todos</option></select></label>
+      <label>Estado <select id="f-estado"><option value="activas">Activas</option><option value="">Todos</option></select></label>
+      <label>Canal <select id="f-canal"><option value="">Todos</option></select></label>
+      <label>Desde <input id="f-desde" type="date"></label>
+      <label>Hasta <input id="f-hasta" type="date"></label>
+    </div>
+    <div class="tabla"><table>
+      <thead><tr><th>ID</th><th>Empresa</th><th>Cargo</th><th>Eje</th><th>Estado</th><th>Próxima acción</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table></div>
+    <p class="vacio" id="sin-filas" hidden>No hay vacantes con estos filtros.</p>
+
+    <dialog id="detalle">
+      <form method="dialog" class="cerrar"><button aria-label="Cerrar">✕</button></form>
+      <h2 id="d-titulo"></h2>
+      <p class="sub" id="d-sub"></p>
+      <p><a id="d-link" target="_blank" rel="noopener noreferrer">Abrir la vacante</a></p>
+      <form id="f-estado-cambio" class="formulario">
+        <h3>Cambiar etapa</h3>
+        <label>Nueva etapa <select id="c-estado"></select></label>
+        <div id="c-envio" class="fila2" hidden>
+          <label>Canal <input id="c-canal" placeholder="Lever, LinkedIn, correo…"></label>
+          <label>Fecha de envío <input id="c-fecha" type="date"></label>
+        </div>
+        <label>Motivo <input id="c-causa" placeholder="Por qué cambia"></label>
+        <button class="primario">Guardar etapa</button>
+      </form>
+      <form id="f-edicion" class="formulario">
+        <h3>Próxima acción</h3>
+        <label>Qué sigue <input id="e-accion"></label>
+        <label>Fecha <input id="e-fecha" type="date"></label>
+        <button>Guardar próxima acción</button>
+      </form>
+      <h3>Historial</h3>
+      <ol class="historial" id="d-historial"></ol>
+    </dialog>
+  </section>
+
+  <section id="p-aprobar" role="tabpanel" aria-labelledby="t-aprobar" hidden>
+    <p class="nota">El agente de correo revisa duarcas_8@hotmail.com y propone cambios. Nada cambia hasta que apruebas.</p>
+    <div id="propuestas"></div>
+    <p class="vacio" id="sin-propuestas" hidden>No hay propuestas pendientes.</p>
+  </section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
