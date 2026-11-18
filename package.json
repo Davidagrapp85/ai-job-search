@@ -1,0 +1,10 @@
+{
+  "name": "career-os",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:career": "bun test career_os",
+    "tracker": "bun career_os/cli.ts",
+    "dashboard:start": "bun career_os/server.ts"
+  }
+}
