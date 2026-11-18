@@ -76,3 +76,12 @@ test("cancelar", async () => {
   await runner.esperar();
   expect(leerCorrida(d, run_id).estado).toBe("cancelada");
 });
+
+test("enviar sin aprobar → 400 y no encola", async () => {
+  const { h, runner } = app();
+  const { run_id } = await (await req(h, "/api/runs", { tipo: "texto", valor: "x" })).json();
+  await runner.esperar();
+  const r = await req(h, `/api/runs/${run_id}/correo/enviar`, { sha256: "x" });
+  expect(r.status).toBe(400);
+  expect(runner.activo()).toBeNull();
+});

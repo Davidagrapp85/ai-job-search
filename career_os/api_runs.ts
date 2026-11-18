@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { abrirArchivo, aprobarDocumento, refrescarDocumentos, rutaSegura } from "./docs";
 import { plantilla, promptArmar, type Runner } from "./runner";
 import { actualizarCorrida, crearCorrida, type Doc, leerCorrida, listarCorridas } from "./runs";
+import { solicitarEnvio, vistaCorreo } from "./correo";
 
 export type Ctx = { dataDir?: string; runner: Runner; spawn?: (a: string[]) => unknown };
 const json = (data: unknown, status = 200) => Response.json(data, { status });
@@ -42,6 +43,7 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
     if (!existsSync(f)) return json({ error: "Todavía no existe" }, 404);
     return new Response(Bun.file(f), { headers: { "content-disposition": `attachment; filename="${nombre}"` } });
   }
+  if (sub === "correo" && req.method === "GET") return json(vistaCorreo(d, id));
   if (req.method !== "POST") return null;
   const b = (await req.json().catch(() => ({}))) as Record<string, string>;
   switch (sub) {
@@ -49,6 +51,19 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
     case "aprobar":
       if (!DOCS.includes(b.doc as Doc)) throw new Error("Documento inválido");
       return json(aprobarDocumento(d, id, b.doc as Doc));
+    case "correo/borrador": {
+      const c = refrescarDocumentos(d, leerCorrida(d, id));
+      if (c.documentos.cv.estado !== "aprobado" || c.documentos.carta.estado !== "aprobado") throw new Error("Aprueba la CV y la carta antes de crear el borrador");
+      vistaCorreo(d, id);
+      ctx.runner.encolar(id, "borrador", plantilla("borrador_correo.md", { run_id: id, carpeta: c.carpeta ?? "" }));
+      return json({ ok: true });
+    }
+    case "correo/enviar": {
+      const c = solicitarEnvio(d, id, b.sha256 ?? "");
+      const v = vistaCorreo(d, id);
+      ctx.runner.encolar(id, "enviar", plantilla("enviar_correo.md", { run_id: id, draft_id: c.draft_id ?? "", asunto: v.asunto, para: v.para.join(", ") }));
+      return json({ ok: true });
+    }
     case "abrir": abrirArchivo(d, id, b.archivo ?? "", ctx.spawn); return json({ ok: true });
     case "chat": {
       const texto = (b.texto ?? "").trim();

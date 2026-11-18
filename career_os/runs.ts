@@ -21,7 +21,7 @@ export type Corrida = {
   canal?: "portal" | "correo"; application_id?: string; carpeta?: string; pasos: Paso[];
   documentos: Record<Doc, { archivo: string; estado: "por revisar" | "aprobado" | "en trabajo"; sha256?: string }>;
   chat: { rol: "david" | "claude"; texto: string; at: string }[];
-  envio_solicitado?: { at: string; sha256_correo: string }; draft_id?: string; error?: string; reintento_api?: boolean;
+  envio_solicitado?: { at: string; sha256_correo: string }; draft_id?: string; sha256_borrador?: string; envio?: { message_id: string; fecha: string }; error?: string; reintento_api?: boolean;
 };
 
 const archivoCorrida = (d: string | undefined, id: string) => {

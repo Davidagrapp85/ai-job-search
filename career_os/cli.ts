@@ -5,6 +5,7 @@ import { type Actor, type Estado } from "./model";
 import { leerFilas } from "./store";
 import { editar, proponer, setEstado, upsert } from "./tracker";
 import { adjunto, type EstadoPaso, reportarPaso } from "./runs";
+import { confirmarEnvio, registrarBorrador } from "./correo";
 
 const AYUDA = `Uso: bun run tracker <comando> [opciones]
   list [--estado X]
@@ -15,6 +16,8 @@ const AYUDA = `Uso: bun run tracker <comando> [opciones]
   pendientes [--hoy AAAA-MM-DD]
   paso <run_id> <paso_id> <pendiente|en curso|listo|alerta|error> [--detalle] [--archivo] [--carpeta] [--application-id] [--canal portal|correo]
   adjunto <run_id> <archivo>   (base64 de un archivo aprobado de la corrida)
+  borrador <run_id> --draft-id X
+  confirmar-envio <run_id> --message-id X --fecha AAAA-MM-DD   (solo tras el clic de David en Enviar)
 <id> acepta application_id (APP-0001) o numero (001, D002).`;
 
 export const FINALES = new Set(["descartada", "rechazada", "cerrada"]);
@@ -34,7 +37,8 @@ function main(argv: string[]): unknown {
       "proxima-accion": { type: "string" }, "fecha-proxima": { type: "string" }, notas: { type: "string" },
       hoy: { type: "string" }, help: { type: "boolean" }, "json-file": { type: "string" },
       detalle: { type: "string" }, archivo: { type: "string" }, carpeta: { type: "string" },
-      "application-id": { type: "string" },
+      "application-id": { type: "string" }, "draft-id": { type: "string" }, "message-id": { type: "string" },
+      fecha: { type: "string" },
     },
   });
   const [cmd, ...args] = p;
@@ -79,6 +83,12 @@ function main(argv: string[]): unknown {
     case "adjunto":
       if (args.length < 2) throw new Error("Uso: adjunto <run_id> <archivo>");
       return adjunto(undefined, args[0], args[1]);
+    case "borrador":
+      if (!args[0] || !v["draft-id"]) throw new Error("Uso: borrador <run_id> --draft-id X");
+      return registrarBorrador(undefined, args[0], v["draft-id"]);
+    case "confirmar-envio":
+      if (!args[0] || !v["message-id"] || !v.fecha) throw new Error("Uso: confirmar-envio <run_id> --message-id X --fecha AAAA-MM-DD");
+      return confirmarEnvio(undefined, args[0], v["message-id"], v.fecha);
     default:
       throw new Error(`Comando desconocido: ${cmd}\n${AYUDA}`);
   }
