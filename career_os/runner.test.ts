@@ -82,3 +82,14 @@ test("chat guarda la respuesta de Claude", async () => {
   const f = leerCorrida(d, c.run_id);
   expect(f.chat.at(-1)).toMatchObject({ rol: "claude", texto: "Listo: ajusté el perfil del CV y regeneré CV.docx." });
 });
+
+test("al terminar el chat el documento en trabajo vuelve a por revisar", async () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const { actualizarCorrida } = await import("./runs");
+  actualizarCorrida(d, c.run_id, (x) => { x.documentos.cv.estado = "en trabajo"; });
+  const r = runner(d);
+  r.encolar(c.run_id, "chat", "mensaje");
+  await r.esperar();
+  expect(leerCorrida(d, c.run_id).documentos.cv.estado).toBe("por revisar");
+});

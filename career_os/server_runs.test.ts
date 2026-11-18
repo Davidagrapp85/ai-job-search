@@ -95,3 +95,13 @@ test("aprendizaje hecho aprobado no encola nada", async () => {
   expect(runner.activo()).toBeNull();
   expect((await (await req(h, "/api/learnings?estado=pendiente")).json()).length).toBe(0);
 });
+
+test("GET de una corrida informa si está ocupada", async () => {
+  const { h, runner } = app();
+  const { run_id } = await (await req(h, "/api/runs", { tipo: "texto", valor: "x" })).json();
+  const ocupada = await (await req(h, `/api/runs/${run_id}`)).json();
+  expect(ocupada.activa || ocupada.en_cola).toBe(true);
+  await runner.esperar();
+  const libre = await (await req(h, `/api/runs/${run_id}`)).json();
+  expect(libre.activa).toBe(false);
+});

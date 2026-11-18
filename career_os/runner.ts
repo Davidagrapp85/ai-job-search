@@ -84,7 +84,12 @@ export class Runner {
       if (cancelado) { x.estado = "cancelada"; return; }
       if (r.code !== 0) { x.estado = "error"; x.error = (r.err || r.out).slice(-500); return; }
       if (t.tipo === "armar") x.estado = "esperando a David";
-      if (t.tipo === "chat" && r.resultado) x.chat.push({ rol: "claude", texto: r.resultado, at: new Date().toISOString() });
+      if (t.tipo === "chat") {
+        if (r.resultado) x.chat.push({ rol: "claude", texto: r.resultado, at: new Date().toISOString() });
+        for (const k of Object.keys(x.documentos) as (keyof typeof x.documentos)[]) {
+          if (x.documentos[k].estado === "en trabajo") x.documentos[k].estado = "por revisar";
+        }
+      }
     });
     await this.siguiente();
   }

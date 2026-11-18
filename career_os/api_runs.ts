@@ -41,7 +41,9 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
   const m = p.match(/^\/api\/runs\/(RUN-[\w-]+)(?:\/(.+))?$/);
   if (!m) return null;
   const [, id, sub] = m;
-  if (!sub && req.method === "GET") return json(refrescarDocumentos(d, leerCorrida(d, id)));
+  if (!sub && req.method === "GET") {
+    return json({ ...refrescarDocumentos(d, leerCorrida(d, id)), activa: ctx.runner.activo() === id, en_cola: ctx.runner.pendientes().includes(id) });
+  }
   if (sub === "seguir" && req.method === "GET") {
     const c = leerCorrida(d, id);
     const pasos = c.pasos.map((x) => `- ${x.titulo}: ${x.estado}${x.detalle ? ` (${x.detalle})` : ""}`).join("\n");

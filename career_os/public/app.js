@@ -157,9 +157,6 @@ $("f-edicion").addEventListener("submit", async (ev) => {
 // Por aprobar
 async function cargarPropuestas() {
   const props = await api("/api/proposals?estado=pendiente");
-  const badge = $("nprop");
-  badge.textContent = String(props.length);
-  badge.hidden = props.length === 0;
   vaciar($("propuestas"));
   for (const p of props) {
     const f = filas.find((x) => x.application_id === p.application_id);
@@ -179,10 +176,205 @@ async function cargarPropuestas() {
       acciones));
   }
   $("sin-propuestas").hidden = props.length > 0;
+  return props.length;
 }
 
 async function refrescar() {
-  try { await cargarFilas(); await Promise.all([cargarResumen(), cargarPropuestas()]); }
+  try {
+    await cargarFilas();
+    const [, nProp, nApr] = await Promise.all([cargarResumen(), cargarPropuestas(), cargarAprendizajes()]);
+    const badge = $("nprop");
+    badge.textContent = String(nProp + nApr);
+    badge.hidden = nProp + nApr === 0;
+    await cargarCorridas();
+  }
   catch (e) { avisar(`No pude leer el tracker: ${e.message}`, true); }
 }
 refrescar();
+
+
+// ---------- Nueva aplicación ----------
+const ICONOS = { pendiente: "○", "en curso": "◌", listo: "✓", alerta: "⚠", error: "✕" };
+const NOMBRES_DOC = { cv: "CV", carta: "Carta", respuestas: "Respuestas" };
+const ACTIVAS = new Set(["en cola", "en curso"]);
+let corridaId = null;
+let corridas = [];
+let vistaCorreoActual = null;
+let sondeo = null;
+
+async function cargarCorridas() {
+  corridas = await api("/api/runs");
+  vaciar($("n-corridas"));
+  for (const c of corridas.slice(0, 12)) {
+    const nombre = c.application_id ? `${c.application_id} · ${c.estado}` : `${c.run_id.slice(4, 17)} · ${c.estado}`;
+    $("n-corridas").append(el("button", { type: "button", "aria-current": String(c.run_id === corridaId), onclick: () => verCorrida(c.run_id), text: nombre }));
+  }
+  if (!corridaId && corridas.length) await verCorrida(corridas[0].run_id, false);
+}
+
+function programarSondeo(c) {
+  clearTimeout(sondeo);
+  const ocupada = ACTIVAS.has(c.estado) || c.activa || c.en_cola || c.chat.at(-1)?.rol === "david";
+  if (ocupada && !$("p-nueva").hidden) sondeo = setTimeout(() => verCorrida(c.run_id, false), 2000);
+}
+
+function fila(paso, c) {
+  const li = el("li", { class: paso.estado.replace(/ /g, "-") },
+    el("span", { class: "icono", "aria-label": paso.estado, text: ICONOS[paso.estado] || "○" }),
+    el("span", {}, paso.titulo, paso.detalle ? el("span", { class: "det", text: paso.detalle }) : null));
+  const acc = el("span", { class: "acciones" });
+  if (paso.archivo && c.carpeta) acc.append(el("button", { type: "button", onclick: () => abrirDoc(c.run_id, paso.archivo), text: "Abrir" }));
+  li.append(acc);
+  return li;
+}
+
+async function abrirDoc(id, archivo) {
+  try { await api(`/api/runs/${encodeURIComponent(id)}/abrir`, { archivo }); avisar(`Abriendo ${archivo}`); }
+  catch (e) { avisar(e.message, true); }
+}
+
+async function accion(ruta, body, okTexto) {
+  try { await api(ruta, body); if (okTexto) avisar(okTexto); await verCorrida(corridaId, false); await refrescarSinCorridas(); }
+  catch (e) { avisar(e.message, true); }
+}
+
+async function refrescarSinCorridas() {
+  try { await cargarFilas(); await cargarResumen(); } catch {}
+}
+
+async function verCorrida(id, scroll = true) {
+  corridaId = id;
+  let c;
+  try { c = await api(`/api/runs/${encodeURIComponent(id)}`); } catch (e) { avisar(e.message, true); return; }
+  [...$("n-corridas").children].forEach((b, i) => b.setAttribute("aria-current", String(corridas[i]?.run_id === id)));
+  $("n-detalle").hidden = false;
+  const f = filas.find((x) => x.application_id === c.application_id);
+  $("n-titulo").textContent = f ? `${f.empresa} · ${f.vacante}` : c.entrada.tipo === "url" ? c.entrada.valor : "Vacante pegada como texto";
+  $("n-sub").textContent = `${c.run_id} · ${c.estado}${c.canal ? ` · canal ${c.canal}` : ""}${c.reintento_api ? " · con API" : ""}`;
+  $("n-cancelar").hidden = !(ACTIVAS.has(c.estado) || c.en_cola);
+  $("n-error").hidden = !c.error;
+  $("n-error").textContent = c.error ? `Claude terminó con error: ${c.error}` : "";
+
+  vaciar($("n-pasos"));
+  for (const p of c.pasos) $("n-pasos").append(fila(p, c));
+
+  vaciar($("n-docs"));
+  for (const k of ["cv", "carta", "respuestas"]) {
+    const d = c.documentos[k];
+    const paso = c.pasos.find((p) => p.id === k);
+    if (!paso || paso.estado === "pendiente") continue;
+    const caja = el("div", { class: "doc" }, el("b", { text: NOMBRES_DOC[k] }),
+      el("span", { class: `pill ${d.estado === "aprobado" ? "aprobada" : ""}`, text: d.estado }));
+    if (c.carpeta) {
+      caja.append(el("button", { type: "button", onclick: () => abrirDoc(c.run_id, d.archivo), text: "Abrir en Word" }));
+      caja.append(el("a", { href: `/api/runs/${encodeURIComponent(c.run_id)}/archivo/${encodeURIComponent(d.archivo)}`, download: d.archivo, text: "Descargar" }));
+    }
+    if (d.estado !== "aprobado") caja.append(el("button", { type: "button", class: "primario", onclick: () => accion(`/api/runs/${encodeURIComponent(c.run_id)}/aprobar`, { doc: k }, `${NOMBRES_DOC[k]} aprobada`), text: "Aprobar" }));
+    caja.append(el("button", { type: "button", onclick: () => { $("ch-doc").value = k; $("ch-texto").focus(); }, text: "Trabajar con Claude" }));
+    $("n-docs").append(caja);
+  }
+  if (!$("n-docs").children.length) $("n-docs").append(el("p", { class: "vacio", text: "Los documentos aparecen cuando Claude los genera." }));
+
+  await pintarCorreo(c);
+
+  vaciar($("n-chat"));
+  for (const m of c.chat) $("n-chat").append(el("div", { class: `msg ${m.rol}`, text: m.texto }));
+  if (c.chat.at(-1)?.rol === "david") $("n-chat").append(el("div", { class: "msg claude pensando", text: "Claude está trabajando…" }));
+  $("n-chat").scrollTop = $("n-chat").scrollHeight;
+  $("n-cerrar").disabled = !c.carpeta || ACTIVAS.has(c.estado);
+  if (scroll) $("n-detalle").scrollIntoView({ behavior: "smooth", block: "start" });
+  programarSondeo(c);
+}
+
+async function pintarCorreo(c) {
+  const caja = $("n-correo");
+  const paso = c.pasos.find((p) => p.id === "correo");
+  caja.hidden = c.canal !== "correo" || !paso || paso.estado === "pendiente";
+  $("c-confirmar").hidden = true;
+  if (caja.hidden) return;
+  try { vistaCorreoActual = await api(`/api/runs/${encodeURIComponent(c.run_id)}/correo`); }
+  catch (e) { caja.hidden = true; return; }
+  const v = vistaCorreoActual;
+  $("c-para").textContent = [...v.para, ...v.cc.map((x) => `cc ${x}`)].join(", ");
+  $("c-asunto").textContent = v.asunto;
+  $("c-adjuntos").textContent = v.adjuntos.map((a) => `${a.nombre}${a.aprobado ? ` (${Math.round(a.bytes / 1024)} KB)` : " (sin aprobar)"}`).join(", ") || "—";
+  $("c-cuerpo").textContent = v.cuerpo_texto;
+  $("c-motivo").hidden = !v.motivo;
+  $("c-motivo").textContent = v.envio ? `Enviado el ${v.envio.fecha}.` : v.motivo || "";
+  $("c-borrador").hidden = !!v.draft_id && !/cambió/.test(v.motivo || "");
+  $("c-enviar").disabled = !v.puedeEnviar;
+}
+
+$("f-nueva").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const valor = $("n-entrada").value.trim();
+  if (!valor) { avisar("Pega el link o el texto de la vacante.", true); return; }
+  try {
+    const c = await api("/api/runs", { valor });
+    $("n-entrada").value = "";
+    avisar("Claude empezó a armar la postulación. Esto toma unos minutos.");
+    corridaId = c.run_id;
+    await cargarCorridas();
+    await verCorrida(c.run_id);
+  } catch (e) { avisar(e.message, true); }
+});
+
+$("f-chat").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const texto = $("ch-texto").value.trim();
+  if (!texto || !corridaId) return;
+  $("ch-texto").value = "";
+  await accion(`/api/runs/${encodeURIComponent(corridaId)}/chat`, { texto, documento: $("ch-doc").value });
+  await cargarCorridas();
+});
+
+$("n-cancelar").addEventListener("click", () => accion(`/api/runs/${encodeURIComponent(corridaId)}/cancelar`, {}, "Corrida cancelada"));
+$("n-cerrar").addEventListener("click", () => accion(`/api/runs/${encodeURIComponent(corridaId)}/cerrar`, {}, "Claude está revisando tus cambios para proponer aprendizajes"));
+$("c-borrador").addEventListener("click", () => accion(`/api/runs/${encodeURIComponent(corridaId)}/correo/borrador`, {}, "Claude está creando el borrador en Outlook"));
+$("c-editar").addEventListener("click", () => { $("ch-doc").value = "correo"; $("ch-texto").focus(); });
+$("c-enviar").addEventListener("click", () => {
+  if (!vistaCorreoActual?.puedeEnviar) return;
+  $("c-confirmar-texto").textContent = `Se enviará «${vistaCorreoActual.asunto}» a ${vistaCorreoActual.para.join(", ")} desde tu Hotmail.`;
+  $("c-confirmar").hidden = false;
+});
+$("c-confirmar-no").addEventListener("click", () => { $("c-confirmar").hidden = true; });
+$("c-confirmar-si").addEventListener("click", () => {
+  if ($("c-confirmar").hidden || !vistaCorreoActual?.puedeEnviar) return;
+  $("c-confirmar").hidden = true;
+  accion(`/api/runs/${encodeURIComponent(corridaId)}/correo/enviar`, { sha256: vistaCorreoActual.sha256 }, "Enviando y verificando en Elementos enviados…");
+});
+
+$("n-seguir").addEventListener("click", async () => {
+  try {
+    const s = await api(`/api/runs/${encodeURIComponent(corridaId)}/seguir`);
+    const texto = `${s.comando}\n\n${s.contexto}`;
+    $("n-seguir-texto").textContent = texto;
+    $("n-seguir-texto").hidden = false;
+    try { await navigator.clipboard.writeText(texto); avisar("Copiado: pega el comando en tu terminal o el contexto en una sesión nueva de Claude."); }
+    catch { avisar("Copia el texto que aparece abajo."); }
+  } catch (e) { avisar(e.message, true); }
+});
+
+document.getElementById("t-nueva").addEventListener("click", () => { if (corridaId) verCorrida(corridaId, false); });
+
+// ---------- Aprendizajes ----------
+async function cargarAprendizajes() {
+  const xs = await api("/api/learnings?estado=pendiente");
+  vaciar($("aprendizajes"));
+  for (const a of xs) {
+    const resolver = (d) => async () => {
+      try { await api(`/api/learnings/${encodeURIComponent(a.learning_id)}/${d}`, {}); avisar(d === "aprobar" ? (a.tipo === "hecho" ? "Queda por validar contra evidencia" : "Aprobado: Claude lo aplicará a tu brain") : "Listo"); await refrescar(); }
+      catch (e) { avisar(e.message, true); }
+    };
+    $("aprendizajes").append(el("article", { class: "apr" },
+      el("div", { class: "de", text: `${a.tipo} · alcance ${a.alcance} · destino ${a.destino} · ${a.application_id}` }),
+      el("div", { class: "cambio" }, el("span", { text: "Antes" }), el("span", { text: a.antes }), el("span", { text: "Después" }), el("span", { text: a.despues })),
+      el("div", { class: "nota", text: a.motivo }),
+      el("div", { class: "acciones" },
+        el("button", { type: "button", class: "primario", onclick: resolver("aprobar"), text: "Aprobar" }),
+        el("button", { type: "button", onclick: resolver("solo-vacante"), text: "Solo esta vacante" }),
+        el("button", { type: "button", onclick: resolver("rechazar"), text: "Rechazar" }))));
+  }
+  $("sin-aprendizajes").hidden = xs.length > 0;
+  return xs.length;
+}

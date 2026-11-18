@@ -11,6 +11,7 @@
   <h1>Career OS</h1>
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-resumen" aria-selected="true" aria-controls="p-resumen">Resumen</button>
+    <button role="tab" id="t-nueva" aria-selected="false" aria-controls="p-nueva">Nueva aplicación</button>
     <button role="tab" id="t-vacantes" aria-selected="false" aria-controls="p-vacantes">Vacantes</button>
     <button role="tab" id="t-aprobar" aria-selected="false" aria-controls="p-aprobar">Por aprobar <span class="badge" id="nprop" hidden></span></button>
   </nav>
@@ -22,6 +23,62 @@
     <div class="kpis" id="kpis"></div>
     <h2>Embudo</h2>
     <div class="embudo" id="embudo"></div>
+  </section>
+
+  <section id="p-nueva" role="tabpanel" aria-labelledby="t-nueva" hidden>
+    <form id="f-nueva" class="entrada">
+      <label for="n-entrada">Link o texto de la vacante</label>
+      <textarea id="n-entrada" rows="3" placeholder="https://jobs.lever.co/… o pega aquí el texto de la vacante (LinkedIn exige pegar el texto)"></textarea>
+      <button class="primario">Armar postulación</button>
+    </form>
+    <div class="corridas" id="n-corridas"></div>
+
+    <section id="n-detalle" class="detalle-corrida" hidden>
+      <div class="cabecera">
+        <div><h2 id="n-titulo"></h2><p class="sub" id="n-sub"></p></div>
+        <div class="acciones">
+          <button id="n-seguir" type="button">Seguir en Claude</button>
+          <button id="n-cancelar" type="button">Cancelar</button>
+        </div>
+      </div>
+      <pre class="seguir" id="n-seguir-texto" hidden></pre>
+      <p class="aviso error" id="n-error" hidden></p>
+      <ol class="pasos" id="n-pasos"></ol>
+
+      <h3>Documentos</h3>
+      <div class="docs" id="n-docs"></div>
+
+      <div id="n-correo" class="correo" hidden>
+        <h3>Correo de postulación</h3>
+        <dl class="cabecera-correo">
+          <dt>Para</dt><dd id="c-para"></dd>
+          <dt>Asunto</dt><dd id="c-asunto"></dd>
+          <dt>Adjuntos</dt><dd id="c-adjuntos"></dd>
+        </dl>
+        <pre class="cuerpo" id="c-cuerpo"></pre>
+        <p class="nota" id="c-motivo" hidden></p>
+        <div class="acciones">
+          <button id="c-borrador" type="button">Crear borrador en Outlook</button>
+          <button id="c-editar" type="button">Editar con Claude</button>
+          <button id="c-enviar" type="button" class="primario">Enviar</button>
+        </div>
+        <div class="confirmar" id="c-confirmar" hidden>
+          <span id="c-confirmar-texto"></span>
+          <button id="c-confirmar-si" type="button" class="primario">Sí, enviar</button>
+          <button id="c-confirmar-no" type="button">No</button>
+        </div>
+      </div>
+
+      <h3>Chat con Claude</h3>
+      <div class="chat" id="n-chat"></div>
+      <form id="f-chat" class="fila-chat">
+        <label>Sobre <select id="ch-doc"><option value="cv">CV</option><option value="carta">Carta</option><option value="respuestas">Respuestas</option><option value="correo">Correo</option></select></label>
+        <input id="ch-texto" placeholder="Qué quieres cambiar" autocomplete="off">
+        <button class="primario">Enviar</button>
+      </form>
+
+      <button id="n-cerrar" type="button">Cerrar y registrar aprendizajes</button>
+    </section>
   </section>
 
   <section id="p-vacantes" role="tabpanel" aria-labelledby="t-vacantes" hidden>
@@ -69,6 +126,10 @@
     <p class="nota">El agente de correo revisa duarcas_8@hotmail.com y propone cambios. Nada cambia hasta que apruebas.</p>
     <div id="propuestas"></div>
     <p class="vacio" id="sin-propuestas" hidden>No hay propuestas pendientes.</p>
+    <h2>Aprendizajes</h2>
+    <p class="nota">Cambios que hiciste en una postulación y que podrían mejorar tu brain. Los de tipo hecho se validan a mano contra evidencia.</p>
+    <div id="aprendizajes"></div>
+    <p class="vacio" id="sin-aprendizajes" hidden>No hay aprendizajes pendientes.</p>
   </section>
 </main>
 <script src="/app.js"></script>

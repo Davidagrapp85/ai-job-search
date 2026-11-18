@@ -17,3 +17,9 @@ test("embudo muestra N/D con denominador cero", () => {
   const js = readFileSync(join(import.meta.dir, "public", "app.js"), "utf8");
   expect(js).toContain('e.de === 0 ? "N/D"');
 });
+
+test("cuerpo del correo con textContent", () => {
+  const js = readFileSync(join(import.meta.dir, "public", "app.js"), "utf8");
+  expect(js).toContain('$("c-cuerpo").textContent = v.cuerpo_texto');
+  expect(js).not.toMatch(/innerHTML/);
+});
