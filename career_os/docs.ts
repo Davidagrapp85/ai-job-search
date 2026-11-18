@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { actualizarCorrida, carpetaAbs, type Corrida, type Doc, leerCorrida, validarArchivo } from "./runs";
 import { setEstado } from "./tracker";
+import { revisarAts } from "./ats";
 
 export const sha256 = (f: string) => new Bun.CryptoHasher("sha256").update(readFileSync(f)).digest("hex");
 
@@ -22,6 +23,10 @@ export function aprobarDocumento(d: string | undefined, runId: string, doc: Doc)
   const c0 = leerCorrida(d, runId);
   const f = rutaSegura(d, c0, c0.documentos[doc].archivo);
   if (!existsSync(f)) throw new Error(`${c0.documentos[doc].archivo} todavía no existe`);
+  if (doc === "cv") {
+    const ats = revisarAts(f);
+    if (ats.puntaje !== 100) throw new Error(`El CV no pasa la legibilidad ATS (${ats.puntaje}%): ${ats.fallas.join("; ")}`);
+  }
   const dir = join(carpetaAbs(d, c0.carpeta!), "aprobado");
   mkdirSync(dir, { recursive: true });
   copyFileSync(f, join(dir, c0.documentos[doc].archivo));

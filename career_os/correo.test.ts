@@ -5,7 +5,7 @@ import { aprobarDocumento } from "./docs";
 import { confirmarEnvio, registrarBorrador, solicitarEnvio, vistaCorreo } from "./correo";
 import { crearCorrida, leerCorrida, reportarPaso } from "./runs";
 import { leerFilas, rutas } from "./store";
-import { datosTemporales } from "./testutil";
+import { datosTemporales, escribirCvDocx } from "./testutil";
 
 function corrida(canal: "portal" | "correo") {
   const d = datosTemporales();
@@ -14,7 +14,7 @@ function corrida(canal: "portal" | "correo") {
   reportarPaso(d, c.run_id, "encaje", "listo", { canal, carpeta, applicationId: "APP-0002" });
   const dir = join(rutas(d).raiz, carpeta);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "CV.docx"), "cv");
+  escribirCvDocx(join(dir, "CV.docx"), "cv");
   writeFileSync(join(dir, "Carta.docx"), "carta");
   writeFileSync(join(dir, "correo.json"), JSON.stringify({ para: ["rh@beta.example"], cc: [], asunto: "Postulación COO", cuerpo_html: "<p>Hola,</p><script>alert(1)</script><p>adjunto mi CV &amp; carta</p>", adjuntos: ["CV.docx", "Carta.docx"] }));
   return { d, id: c.run_id, dir };
@@ -44,7 +44,7 @@ test("enviar exige aprobados vigentes", () => {
   aprobarDocumento(d, id, "carta");
   v = vistaCorreo(d, id);
   expect(v.puedeEnviar).toBe(true);
-  writeFileSync(join(dir, "CV.docx"), "cv editado");
+  escribirCvDocx(join(dir, "CV.docx"), "cv editado");
   expect(vistaCorreo(d, id).puedeEnviar).toBe(false);
 });
 

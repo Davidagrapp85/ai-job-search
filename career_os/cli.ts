@@ -7,6 +7,7 @@ import { editar, proponer, setEstado, upsert } from "./tracker";
 import { adjunto, type EstadoPaso, reportarPaso } from "./runs";
 import { confirmarEnvio, registrarBorrador } from "./correo";
 import { marcarAplicado, proponerAprendizaje } from "./learnings";
+import { registrarAts, registrarCalidad } from "./calidad";
 
 const AYUDA = `Uso: bun run tracker <comando> [opciones]
   list [--estado X]
@@ -16,6 +17,8 @@ const AYUDA = `Uso: bun run tracker <comando> [opciones]
   propose --json-file <ruta.json>   (o --json '<…>'; los agentes usan --json-file)
   pendientes [--hoy AAAA-MM-DD]
   paso <run_id> <paso_id> <pendiente|en curso|listo|alerta|error> [--detalle] [--archivo] [--carpeta] [--application-id] [--canal portal|correo]
+  ats <run_id>   (legibilidad ATS del CV; debe dar 100)
+  calidad <run_id> --json-file X   (nota de 5 variables; ver prompts/armar_postulacion.md)
   adjunto <run_id> <archivo>   (base64 de un archivo aprobado de la corrida)
   borrador <run_id> --draft-id X
   aprendizaje --json-file X
@@ -40,7 +43,7 @@ function main(argv: string[]): unknown {
       "proxima-accion": { type: "string" }, "fecha-proxima": { type: "string" }, notas: { type: "string" },
       hoy: { type: "string" }, help: { type: "boolean" }, "json-file": { type: "string" },
       detalle: { type: "string" }, archivo: { type: "string" }, carpeta: { type: "string" },
-      "application-id": { type: "string" }, "draft-id": { type: "string" }, "message-id": { type: "string" },
+      "application-id": { type: "string" }, puntaje: { type: "string" }, "draft-id": { type: "string" }, "message-id": { type: "string" },
       fecha: { type: "string" }, "diff-file": { type: "string" },
     },
   });
@@ -60,7 +63,7 @@ function main(argv: string[]): unknown {
   const exigeTipo = (tipo: string, cmdNombre: string) => {
     if (tipoAgente !== tipo) throw new Error(`${cmdNombre} se usa solo en la corrida de ${tipo === "enviar" ? "envío" : tipo}`);
   };
-  if (["paso", "adjunto", "borrador", "confirmar-envio"].includes(cmd)) soloMiCorrida(args[0] ?? "");
+  if (["paso", "adjunto", "borrador", "confirmar-envio", "ats", "calidad"].includes(cmd)) soloMiCorrida(args[0] ?? "");
   if (cmd === "adjunto" || cmd === "borrador") exigeTipo("borrador", cmd);
   if (cmd === "confirmar-envio") exigeTipo("enviar", cmd);
   if (cmd === "aprendizaje-aplicado") exigeTipo("aplicar", cmd);
@@ -91,8 +94,14 @@ function main(argv: string[]): unknown {
       if (args.length < 3) throw new Error("Uso: paso <run_id> <paso_id> <estado>");
       return reportarPaso(undefined, args[0], args[1], args[2] as EstadoPaso, {
         detalle: v.detalle, archivo: v.archivo, carpeta: v.carpeta, applicationId: v["application-id"],
-        canal: v.canal as "portal" | "correo" | undefined,
+        canal: v.canal as "portal" | "correo" | undefined, puntaje: v.puntaje !== undefined ? Number(v.puntaje) : undefined,
       });
+    case "ats":
+      if (!args[0]) throw new Error("Uso: ats <run_id>");
+      return registrarAts(undefined, args[0]);
+    case "calidad":
+      if (!args[0]) throw new Error("Uso: calidad <run_id> --json-file X");
+      return registrarCalidad(undefined, args[0], leerJson());
     case "adjunto":
       if (args.length < 2) throw new Error("Uso: adjunto <run_id> <archivo>");
       return adjunto(undefined, args[0], args[1]);

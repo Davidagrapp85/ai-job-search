@@ -28,7 +28,7 @@ test("POST /api/runs encola y crea", async () => {
   await runner.esperar();
   expect(leerCorrida(d, run_id).estado).toBe("esperando a David");
   expect((await (await req(h, "/api/runs")).json()).length).toBe(1);
-  expect((await (await req(h, `/api/runs/${run_id}`)).json()).pasos.length).toBe(7);
+  expect((await (await req(h, `/api/runs/${run_id}`)).json()).pasos.length).toBe(9);
 });
 
 test("entrada vacía → 400", async () => {

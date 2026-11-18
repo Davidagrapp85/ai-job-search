@@ -8,9 +8,9 @@ export const ARCHIVOS = ["vacante.md", "analisis.md", "CV.docx", "Carta.docx", "
 export const ESTADOS_PASO = ["pendiente", "en curso", "listo", "alerta", "error"] as const;
 const TITULOS: Record<string, string> = {
   leer: "Leer la vacante", investigar: "Investigar la empresa", encaje: "Encaje y alertas", cv: "CV",
-  carta: "Carta", respuestas: "Respuestas de formulario", correo: "Correo de postulación", registro: "Registro en tracker",
+  carta: "Carta", ats: "Legibilidad ATS (100%)", respuestas: "Respuestas de formulario", calidad: "Calidad del paquete", correo: "Correo de postulación", registro: "Registro en tracker",
 };
-const BASE = ["leer", "investigar", "encaje", "cv", "carta", "respuestas", "registro"];
+const BASE = ["leer", "investigar", "encaje", "cv", "carta", "ats", "respuestas", "calidad", "registro"];
 
 export type EstadoPaso = (typeof ESTADOS_PASO)[number];
 export type Paso = { id: string; titulo: string; estado: EstadoPaso; detalle?: string; archivo?: string; at?: string };
@@ -21,7 +21,12 @@ export type Corrida = {
   canal?: "portal" | "correo"; application_id?: string; carpeta?: string; pasos: Paso[];
   documentos: Record<Doc, { archivo: string; estado: "por revisar" | "aprobado" | "en trabajo"; sha256?: string }>;
   chat: { rol: "david" | "claude"; texto: string; at: string }[];
-  envio_solicitado?: { at: string; sha256_correo: string }; draft_id?: string; sha256_borrador?: string; envio?: { message_id: string; fecha: string }; error?: string; reintento_api?: boolean;
+  envio_solicitado?: { at: string; sha256_correo: string }; draft_id?: string; sha256_borrador?: string; envio?: { message_id: string; fecha: string };
+  encaje?: number;
+  ats?: { puntaje: number; chequeos: { nombre: string; ok: boolean; detalle?: string }[]; idioma: string; at: string };
+  calidad?: { ronda: number; total: number; dimensiones: Record<string, number>; cambios?: string; at: string }[];
+  cobertura?: { requisito: string; estado: "demostrado" | "parcial" | "no demostrado" | "desconocido"; evidencia?: string }[];
+  cobertura_pct?: number; riesgos?: string[]; error?: string; reintento_api?: boolean;
 };
 
 const archivoCorrida = (d: string | undefined, id: string) => {
@@ -88,7 +93,7 @@ export function carpetaAbs(d: string | undefined, carpeta: string): string {
 
 export function reportarPaso(
   d: string | undefined, id: string, pasoId: string, estado: EstadoPaso,
-  o: { detalle?: string; archivo?: string; carpeta?: string; applicationId?: string; canal?: "portal" | "correo" } = {},
+  o: { detalle?: string; archivo?: string; carpeta?: string; applicationId?: string; canal?: "portal" | "correo"; puntaje?: number } = {},
 ): Corrida {
   if (!(ESTADOS_PASO as readonly string[]).includes(estado)) throw new Error(`Estado de paso inválido: ${estado}`);
   if (o.archivo) validarArchivo(o.archivo);
@@ -109,6 +114,10 @@ export function reportarPaso(
     if (o.archivo) p.archivo = o.archivo;
     if (o.carpeta) c.carpeta = o.carpeta;
     if (o.applicationId) c.application_id = o.applicationId;
+    if (o.puntaje !== undefined && pasoId === "encaje") {
+      if (!(o.puntaje >= 0 && o.puntaje <= 100)) throw new Error("El puntaje de encaje va entre 0 y 100");
+      c.encaje = Math.round(o.puntaje);
+    }
     if (c.estado === "en cola") c.estado = "en curso";
   });
 }

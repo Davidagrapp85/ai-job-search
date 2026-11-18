@@ -23,14 +23,27 @@ if (runId && prompt.includes("Tarea: enviar el correo")) {
   tracker("paso", runId, "correo", "listo", "--detalle", "Enviado y verificado (simulado)");
 }
 if (!esChat && runId && prompt.includes("armar")) {
-  const pasos = ["leer", "investigar", "encaje", "cv", "carta", "respuestas", "registro"];
+  const pasos = ["leer", "investigar", "encaje", "cv", "carta", "ats", "respuestas", "calidad", "registro"];
   for (const p of pasos) {
     if (modo === "lento") await Bun.sleep(2000);
     const extra = p === "leer" ? ["--carpeta", "04_Postulaciones/099_Prueba"] : p === "encaje" ? ["--canal", process.env.CLAUDE_FALSO_CANAL ?? "portal"] : [];
     const { mkdirSync, writeFileSync } = await import("node:fs");
     mkdirSync(carpeta, { recursive: true });
     const archivos: Record<string, string> = { leer: "vacante.md", encaje: "analisis.md", cv: "CV.docx", carta: "Carta.docx", respuestas: "respuestas.md" };
-    if (archivos[p]) { writeFileSync(join(carpeta, archivos[p]), `${p} de prueba`); extra.push("--archivo", archivos[p]); }
+    if (archivos[p]) {
+      if (p === "cv") (await import("../testutil")).escribirCvDocx(join(carpeta, "CV.docx"));
+      else writeFileSync(join(carpeta, archivos[p]), `${p} de prueba`);
+      extra.push("--archivo", archivos[p]);
+    }
+    if (p === "ats") { tracker("ats", runId); continue; }
+    if (p === "calidad") {
+      writeFileSync(join(carpeta, "_calidad.json"), JSON.stringify({ dimensiones: { veracidad: 100, pertinencia: 85, evidencia: 80, claridad: 75, coherencia: 90 }, cobertura: [{ requisito: "Operaciones fintech", estado: "demostrado" }, { requisito: "SQL", estado: "parcial" }], riesgos: ["Inglés fluido sin certificado"] }));
+      tracker("calidad", runId, "--json-file", join(carpeta, "_calidad.json"));
+      writeFileSync(join(carpeta, "_calidad.json"), JSON.stringify({ dimensiones: { veracidad: 100, pertinencia: 95, evidencia: 90, claridad: 90, coherencia: 95 }, cobertura: [{ requisito: "Operaciones fintech", estado: "demostrado" }, { requisito: "SQL", estado: "parcial" }], riesgos: ["Inglés fluido sin certificado"], cambios: "Perfil enfocado en el cargo" }));
+      tracker("calidad", runId, "--json-file", join(carpeta, "_calidad.json"));
+      continue;
+    }
+    if (p === "encaje") extra.push("--puntaje", "49");
     if (p === "registro") extra.push("--application-id", process.env.CLAUDE_FALSO_APP ?? "APP-0002");
     tracker("paso", runId, p, "listo", "--detalle", `paso ${p}`, ...extra);
     if (p === "respuestas" && (process.env.CLAUDE_FALSO_CANAL ?? "portal") === "correo") {

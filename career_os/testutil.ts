@@ -21,3 +21,11 @@ export function datosTemporales(filas?: Fila[]): string {
   writeFileSync(join(dir, "05_Tracker", "postulaciones.csv"), stringifyCsv([[...COLUMNAS], ...fs.map((f) => COLUMNAS.map((c) => f[c]))]));
   return dir;
 }
+
+/** Escribe un CV.docx mínimo que pasa la legibilidad ATS (texto distinto según `marca`). */
+export function escribirCvDocx(archivo: string, marca = "v1"): void {
+  const relleno = `Ran four credit products end to end and worked with corporate clients and funders across the region ${marca}. `.repeat(6);
+  const ps = ["DAVID", "+57 312 000 0000 · d@example.com", "PROFESSIONAL SUMMARY", relleno, "PROFESSIONAL EXPERIENCE", relleno, "EDUCATION", "MBA", "SKILLS", "Ops"];
+  const xml = `<w:document><w:body>${ps.map((p) => `<w:p><w:r><w:t>${p}</w:t></w:r></w:p>`).join("")}</w:body></w:document>`;
+  Bun.spawnSync(["python3", "-I", "-c", "import sys,zipfile;z=zipfile.ZipFile(sys.argv[1],'w');z.writestr('word/document.xml',sys.argv[2]);z.close()", archivo, xml]);
+}

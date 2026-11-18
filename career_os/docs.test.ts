@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { abrirArchivo, aprobarDocumento, refrescarDocumentos } from "./docs";
 import { crearCorrida, leerCorrida, reportarPaso } from "./runs";
 import { leerEventos, leerFilas, rutas } from "./store";
-import { datosTemporales } from "./testutil";
+import { datosTemporales, escribirCvDocx } from "./testutil";
 
 function corridaConDocs() {
   const d = datosTemporales();
@@ -13,7 +13,7 @@ function corridaConDocs() {
   reportarPaso(d, c.run_id, "registro", "listo", { carpeta, applicationId: "APP-0002" });
   const dir = join(rutas(d).raiz, carpeta);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "CV.docx"), "cv v1");
+  escribirCvDocx(join(dir, "CV.docx"), "cv v1");
   writeFileSync(join(dir, "Carta.docx"), "carta v1");
   return { d, id: c.run_id, dir };
 }
@@ -40,7 +40,7 @@ test("respuestas existentes también deben aprobarse", () => {
 test("cambio después de aprobar vuelve a por revisar", () => {
   const { d, id, dir } = corridaConDocs();
   aprobarDocumento(d, id, "cv");
-  writeFileSync(join(dir, "CV.docx"), "cv editado en Word");
+  escribirCvDocx(join(dir, "CV.docx"), "cv editado en Word");
   const c = refrescarDocumentos(d, leerCorrida(d, id));
   expect(c.documentos.cv.estado).toBe("por revisar");
 });
