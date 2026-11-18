@@ -5,6 +5,8 @@ import { calcularMetricas } from "./metrics";
 import type { Estado } from "./model";
 import { leerEventos, leerFilas, leerPropuestas } from "./store";
 import { editar, resolverPropuesta, setEstado } from "./tracker";
+import { rutasCorridas } from "./api_runs";
+import { Runner } from "./runner";
 
 const PUBLIC = resolve(import.meta.dir, "public");
 const json = (data: unknown, status = 200) => Response.json(data, { status });
@@ -26,8 +28,9 @@ function estatico(pathname: string): Response {
 }
 
 /** Manejador HTTP sin red: el servidor lo usa y las pruebas lo llaman directo. */
-export function crearManejador(opts: { dataDir?: string; port: () => number }) {
+export function crearManejador(opts: { dataDir?: string; port: () => number; runner?: Runner; spawn?: (a: string[]) => unknown }) {
   const d = opts.dataDir;
+  const runner = opts.runner ?? new Runner({ dataDir: d });
   return async function manejar(req: Request): Promise<Response> {
       const url = new URL(req.url);
       const port = opts.port();
@@ -60,6 +63,10 @@ export function crearManejador(opts: { dataDir?: string; port: () => number }) {
         }
         m = p.match(/^\/api\/proposals\/([^/]+)\/(aprobar|rechazar)$/);
         if (req.method === "POST" && m) return json(resolverPropuesta({ dataDir: d, proposalId: decodeURIComponent(m[1]), decision: m[2] as "aprobar" | "rechazar" }));
+        if (p.startsWith("/api/runs")) {
+          const r = await rutasCorridas(req, p, { dataDir: d, runner, spawn: opts.spawn });
+          if (r) return r;
+        }
         if (p.startsWith("/api/")) return json({ error: "Ruta no encontrada" }, 404);
         if (req.method === "GET") return estatico(p);
         return json({ error: "Método no permitido" }, 405);
