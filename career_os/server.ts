@@ -63,7 +63,7 @@ export function crearManejador(opts: { dataDir?: string; port: () => number; run
         }
         m = p.match(/^\/api\/proposals\/([^/]+)\/(aprobar|rechazar)$/);
         if (req.method === "POST" && m) return json(resolverPropuesta({ dataDir: d, proposalId: decodeURIComponent(m[1]), decision: m[2] as "aprobar" | "rechazar" }));
-        if (p.startsWith("/api/runs")) {
+        if (p.startsWith("/api/runs") || p.startsWith("/api/learnings")) {
           const r = await rutasCorridas(req, p, { dataDir: d, runner, spawn: opts.spawn });
           if (r) return r;
         }

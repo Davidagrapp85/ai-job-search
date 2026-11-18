@@ -4,6 +4,10 @@ import { abrirArchivo, aprobarDocumento, refrescarDocumentos, rutaSegura } from 
 import { plantilla, promptArmar, type Runner } from "./runner";
 import { actualizarCorrida, crearCorrida, type Doc, leerCorrida, listarCorridas } from "./runs";
 import { solicitarEnvio, vistaCorreo } from "./correo";
+import { listarAprendizajes, resolverAprendizaje } from "./learnings";
+import { copyFileSync } from "node:fs";
+import { join } from "node:path";
+import { carpetaAbs } from "./runs";
 
 export type Ctx = { dataDir?: string; runner: Runner; spawn?: (a: string[]) => unknown };
 const json = (data: unknown, status = 200) => Response.json(data, { status });
@@ -23,6 +27,16 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
     const c = crearCorrida(d, { tipo, valor });
     ctx.runner.encolar(c.run_id, "armar", promptArmar(c));
     return json(c);
+  }
+  if (p === "/api/learnings" && req.method === "GET") return json(listarAprendizajes(d, new URL(req.url).searchParams.get("estado") ?? undefined));
+  const ml = p.match(/^\/api\/learnings\/(APR-[\w-]+)\/(aprobar|solo-vacante|rechazar)$/);
+  if (ml && req.method === "POST") {
+    const r = resolverAprendizaje(d, ml[1], ml[2] === "solo-vacante" ? "solo vacante" : (ml[2] as "aprobar" | "rechazar"));
+    if (r.aplicar) {
+      const a = r.aprendizaje;
+      ctx.runner.encolar(a.run_id, "aplicar", plantilla("aplicar_aprendizaje.md", { learning_id: a.learning_id, destino: a.destino, tipo: a.tipo, alcance: a.alcance, antes: a.antes, despues: a.despues, motivo: a.motivo }));
+    }
+    return json(r.aprendizaje);
   }
   const m = p.match(/^\/api\/runs\/(RUN-[\w-]+)(?:\/(.+))?$/);
   if (!m) return null;
@@ -63,6 +77,14 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
       const v = vistaCorreo(d, id);
       ctx.runner.encolar(id, "enviar", plantilla("enviar_correo.md", { run_id: id, draft_id: c.draft_id ?? "", asunto: v.asunto, para: v.para.join(", ") }));
       return json({ ok: true });
+    }
+    case "cerrar": {
+      const c = leerCorrida(d, id);
+      if (!c.carpeta) throw new Error("La corrida no tiene carpeta");
+      const dir = carpetaAbs(d, c.carpeta);
+      if (!existsSync(join(dir, "content.v1.json")) && existsSync(join(dir, "content.json"))) copyFileSync(join(dir, "content.json"), join(dir, "content.v1.json"));
+      ctx.runner.encolar(id, "aprendizajes", plantilla("aprendizajes.md", { run_id: id, carpeta: c.carpeta, application_id: c.application_id ?? "" }));
+      return json(actualizarCorrida(d, id, (x) => { if (x.estado !== "enviada") x.estado = "cerrada"; }));
     }
     case "abrir": abrirArchivo(d, id, b.archivo ?? "", ctx.spawn); return json({ ok: true });
     case "chat": {

@@ -85,3 +85,13 @@ test("enviar sin aprobar → 400 y no encola", async () => {
   expect(r.status).toBe(400);
   expect(runner.activo()).toBeNull();
 });
+
+test("aprendizaje hecho aprobado no encola nada", async () => {
+  const { d, h, runner } = app();
+  const { proponerAprendizaje } = await import("./learnings");
+  const a = proponerAprendizaje(d, { run_id: "RUN-x", application_id: "APP-0002", tipo: "hecho", antes: "a", despues: "b", motivo: "m", alcance: "compartido", destino: "01_Perfil/banco_evidencias.md" });
+  const r = await req(h, `/api/learnings/${a.learning_id}/aprobar`, {});
+  expect((await r.json()).estado).toBe("por validar");
+  expect(runner.activo()).toBeNull();
+  expect((await (await req(h, "/api/learnings?estado=pendiente")).json()).length).toBe(0);
+});

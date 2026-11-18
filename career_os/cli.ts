@@ -6,6 +6,7 @@ import { leerFilas } from "./store";
 import { editar, proponer, setEstado, upsert } from "./tracker";
 import { adjunto, type EstadoPaso, reportarPaso } from "./runs";
 import { confirmarEnvio, registrarBorrador } from "./correo";
+import { marcarAplicado, proponerAprendizaje } from "./learnings";
 
 const AYUDA = `Uso: bun run tracker <comando> [opciones]
   list [--estado X]
@@ -17,6 +18,8 @@ const AYUDA = `Uso: bun run tracker <comando> [opciones]
   paso <run_id> <paso_id> <pendiente|en curso|listo|alerta|error> [--detalle] [--archivo] [--carpeta] [--application-id] [--canal portal|correo]
   adjunto <run_id> <archivo>   (base64 de un archivo aprobado de la corrida)
   borrador <run_id> --draft-id X
+  aprendizaje --json-file X
+  aprendizaje-aplicado <learning_id> --diff-file X
   confirmar-envio <run_id> --message-id X --fecha AAAA-MM-DD   (solo tras el clic de David en Enviar)
 <id> acepta application_id (APP-0001) o numero (001, D002).`;
 
@@ -38,7 +41,7 @@ function main(argv: string[]): unknown {
       hoy: { type: "string" }, help: { type: "boolean" }, "json-file": { type: "string" },
       detalle: { type: "string" }, archivo: { type: "string" }, carpeta: { type: "string" },
       "application-id": { type: "string" }, "draft-id": { type: "string" }, "message-id": { type: "string" },
-      fecha: { type: "string" },
+      fecha: { type: "string" }, "diff-file": { type: "string" },
     },
   });
   const [cmd, ...args] = p;
@@ -89,6 +92,11 @@ function main(argv: string[]): unknown {
     case "confirmar-envio":
       if (!args[0] || !v["message-id"] || !v.fecha) throw new Error("Uso: confirmar-envio <run_id> --message-id X --fecha AAAA-MM-DD");
       return confirmarEnvio(undefined, args[0], v["message-id"], v.fecha);
+    case "aprendizaje":
+      return proponerAprendizaje(undefined, leerJson());
+    case "aprendizaje-aplicado":
+      if (!args[0] || !v["diff-file"]) throw new Error("Uso: aprendizaje-aplicado <learning_id> --diff-file X");
+      return marcarAplicado(undefined, args[0], readFileSync(v["diff-file"], "utf8"));
     default:
       throw new Error(`Comando desconocido: ${cmd}\n${AYUDA}`);
   }
