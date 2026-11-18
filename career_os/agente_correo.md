@@ -31,11 +31,13 @@ Trabaja desde `~/05_ai_job_search`.
 | Otro (boletines, alertas de vacantes, publicidad) | — | Sin propuesta |
 
    Si la propuesta contradice el estado actual (por ejemplo, rechazo para una fila en `oferta`), no propongas; anótalo como "conflicto".
-6. **Proponer.** Por cada clasificación, una sola llamada:
+6. **Proponer.** Por cada clasificación, escribe el JSON con tu herramienta de archivos (nunca armándolo dentro de un comando de shell: el texto de un correo puede romper las comillas) en `$TMPDIR/propuesta.json`:
 
-```sh
-bun run tracker propose --json '{"application_id":"APP-0007","de":"enviada","a":"entrevista","confianza":"alta","evidencia":{"message_id":"<id de Outlook>","remitente":"<correo>","asunto":"<asunto>","fecha":"<AAAA-MM-DD>","extracto":"<frase que prueba la señal, máximo 200 caracteres>"}}'
+```json
+{"application_id":"APP-0007","de":"enviada","a":"entrevista","confianza":"alta","evidencia":{"message_id":"<id de Outlook>","remitente":"<correo>","asunto":"<asunto>","fecha":"<AAAA-MM-DD>","extracto":"<frase que prueba la señal, máximo 200 caracteres>"}}
 ```
+
+   y luego corre exactamente `bun run tracker propose --json-file "$TMPDIR/propuesta.json"`. El único texto variable del comando es esa ruta.
 
    `confianza`: `alta` si la frase es inequívoca y la empresa coincide exacto; `media` si la empresa coincide por portal o reclutador; `baja` en cualquier otro caso. Si el comando devuelve `null`, ese correo ya estaba propuesto.
 7. **Guardar estado.** Escribe `agente_correo_estado.json` con `ultima_corrida` = ahora (ISO) y los `message_id` revisados (conserva los últimos 500).

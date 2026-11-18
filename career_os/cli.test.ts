@@ -46,3 +46,12 @@ test("pendientes", () => {
 test("help", () => {
   expect(run(datosTemporales(), "--help").out).toContain("set-estado");
 });
+
+test("propose lee JSON de archivo sin pasar por el shell", () => {
+  const d = datosTemporales();
+  const f = `${d}/prop.json`;
+  require("node:fs").writeFileSync(f, JSON.stringify({ application_id: "APP-0001", de: "enviada", a: "entrevista", confianza: "alta", evidencia: { message_id: "m9", remitente: "a@b.c", asunto: "Let's talk'; rm -rf /", fecha: "2026-11-18", extracto: "y" } }));
+  const r = run(d, "propose", "--json-file", f);
+  expect(r.code).toBe(0);
+  expect(JSON.parse(r.out).evidencia.asunto).toBe("Let's talk'; rm -rf /");
+});

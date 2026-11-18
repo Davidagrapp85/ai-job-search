@@ -49,3 +49,13 @@ test("ya migrado", () => {
   migrar(d);
   expect(() => migrar(d)).toThrow("Ya migrado");
 });
+
+test("revertir no borra cambios posteriores sin --force y respalda antes", () => {
+  const d = datos();
+  migrar(d);
+  require("node:fs").appendFileSync(rutas(d).eventos, JSON.stringify({ event_id: "E", application_id: "APP-0002", at: "x", tipo: "edicion", actor: "david", causa: "x" }) + "\n");
+  expect(() => revertir(d)).toThrow("cambios posteriores");
+  revertir(d, { force: true });
+  expect(readFileSync(rutas(d).csv, "utf8")).toBe(ORIGINAL);
+  expect(require("node:fs").readdirSync(rutas(d).respaldos).length).toBeGreaterThan(0);
+});

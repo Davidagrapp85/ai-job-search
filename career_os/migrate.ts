@@ -3,7 +3,7 @@
 import { copyFileSync, existsSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { COLUMNAS, type Fila, nuevoId } from "./model";
-import { agregarEvento, conLock, escribirFilas, leerFilas, rutas } from "./store";
+import { agregarEvento, conLock, escribirFilas, leerEventos, leerFilas, respaldar, rutas } from "./store";
 
 const original = (dataDir?: string) => join(rutas(dataDir).csv.replace(/[^/]+$/, ""), "postulaciones.pre_fase1.csv");
 
@@ -30,9 +30,14 @@ export function migrar(dataDir?: string): { filas: number } {
   });
 }
 
-export function revertir(dataDir?: string): void {
+export function revertir(dataDir?: string, opts: { force?: boolean } = {}): void {
   conLock(dataDir, () => {
     if (!existsSync(original(dataDir))) throw new Error("No hay copia previa a la migración");
+    const posteriores = leerEventos(dataDir).filter((e) => e.actor !== "migracion").length;
+    if (posteriores && !opts.force) {
+      throw new Error(`Hay ${posteriores} cambios posteriores a la migración que se perderían; usa --force si estás seguro`);
+    }
+    respaldar(dataDir);
     copyFileSync(original(dataDir), rutas(dataDir).csv);
     const ev = rutas(dataDir).eventos;
     if (existsSync(ev)) renameSync(ev, ev.replace(/\.jsonl$/, `.revertido-${new Date().toISOString().replace(/:/g, "")}.jsonl`));
@@ -41,7 +46,7 @@ export function revertir(dataDir?: string): void {
 
 if (import.meta.main) {
   try {
-    if (process.argv.includes("--revert")) { revertir(); console.log(JSON.stringify({ revertido: true })); }
+    if (process.argv.includes("--revert")) { revertir(undefined, { force: process.argv.includes("--force") }); console.log(JSON.stringify({ revertido: true })); }
     else console.log(JSON.stringify(migrar()));
   } catch (e: any) { console.error(e.message); process.exit(1); }
 }

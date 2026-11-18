@@ -100,3 +100,17 @@ test("inyección en el correo", () => {
   const estados = leerFilas(d).filas.map((f) => f.estado);
   expect(estados).toEqual(["entrevista", "en preparación", "detectada"]);
 });
+
+test("aprobar propuesta obsoleta no deshace un cambio posterior", () => {
+  const d = datosTemporales();
+  const p = proponer({ dataDir: d, p: { application_id: "APP-0001", de: "enviada", a: "entrevista", evidencia: evidencia("m7"), confianza: "alta" } })!;
+  setEstado({ dataDir: d, id: "APP-0001", estado: "rechazada", actor: "david", causa: "me escribieron" });
+  expect(() => resolverPropuesta({ dataDir: d, proposalId: p.proposal_id, decision: "aprobar" })).toThrow("cambió desde la propuesta");
+  expect(leerFilas(d).filas[0].estado).toBe("rechazada");
+});
+
+test("convertir D→NNN marca la vacante como elegida", () => {
+  const d = datosTemporales();
+  const { fila } = upsert({ dataDir: d, fila: { numero: "003", empresa: "Gamma", vacante: "Ops Lead", estado: "en preparación" }, actor: "claude", causa: "armar" });
+  expect(fila.decision).toBe("user_selected");
+});

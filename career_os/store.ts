@@ -54,7 +54,7 @@ function escribirAtomico(ruta: string, contenido: string): void {
   renameSync(tmp, ruta);
 }
 
-function respaldar(dataDir?: string): void {
+export function respaldar(dataDir?: string): void {
   const r = rutas(dataDir);
   if (!existsSync(r.csv)) return;
   mkdirSync(r.respaldos, { recursive: true });

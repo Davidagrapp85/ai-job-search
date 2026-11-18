@@ -69,6 +69,9 @@ export function upsert(o: { dataDir?: string; fila: Partial<Fila>; actor: Actor;
     if (existente) {
       const de = existente.estado;
       const { application_id: _ignorado, ...resto } = o.fila;
+      if (existente.numero.startsWith("D") && resto.numero && !resto.numero.startsWith("D") && !resto.decision) {
+        resto.decision = "user_selected";
+      }
       Object.assign(existente, resto);
       escribirFilas(o.dataDir, columnas, filas);
       const e = evento(existente, de !== existente.estado
@@ -111,6 +114,10 @@ export function resolverPropuesta(o: { dataDir?: string; proposalId: string; dec
     if (!p) throw new Error(`No existe la propuesta ${o.proposalId}`);
     if (p.estado !== "pendiente") return p;
     if (o.decision === "aprobar") {
+      const actual = buscar(cargar(o.dataDir).filas, p.application_id).estado;
+      if (actual !== p.de && actual !== p.a) {
+        throw new Error(`La postulación cambió desde la propuesta (ahora está en ${actual}); recházala o revísala`);
+      }
       try {
         setEstadoSinLock({
           dataDir: o.dataDir, id: p.application_id, estado: p.a as Estado, actor: "agente_correo",
