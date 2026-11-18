@@ -92,6 +92,12 @@ export async function rutasCorridas(req: Request, p: string, ctx: Ctx): Promise<
       ctx.runner.encolar(id, "aprendizajes", plantilla("aprendizajes.md", { run_id: id, carpeta: c.carpeta, application_id: c.application_id ?? "" }));
       return json(actualizarCorrida(d, id, (x) => { if (x.estado !== "enviada") x.estado = "cerrada"; }));
     }
+    case "calidad": {
+      const c = leerCorrida(d, id);
+      if (!c.carpeta) throw new Error("La corrida no tiene carpeta");
+      ctx.runner.encolar(id, "chat", plantilla("calidad.md", { run_id: id, carpeta: c.carpeta }));
+      return json({ ok: true });
+    }
     case "abrir": abrirArchivo(d, id, b.archivo ?? "", ctx.spawn); return json({ ok: true });
     case "chat": {
       const texto = (b.texto ?? "").trim();

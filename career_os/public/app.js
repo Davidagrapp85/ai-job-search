@@ -258,6 +258,8 @@ async function verCorrida(id, scroll = true) {
   vaciar($("n-pasos"));
   for (const p of c.pasos) $("n-pasos").append(fila(p, c));
 
+  pintarCalidad(c);
+
   vaciar($("n-docs"));
   for (const k of ["cv", "carta", "respuestas"]) {
     const d = c.documentos[k];
@@ -378,3 +380,38 @@ async function cargarAprendizajes() {
   $("sin-aprendizajes").hidden = xs.length > 0;
   return xs.length;
 }
+
+
+// ---------- Calidad ----------
+const PESOS = { veracidad: 30, pertinencia: 25, evidencia: 20, claridad: 15, coherencia: 10 };
+function pintarCalidad(c) {
+  const hay = c.encaje != null || c.ats || (c.calidad && c.calidad.length);
+  $("n-calidad").hidden = !hay;
+  if (!hay) return;
+  $("q-encaje").textContent = c.encaje != null ? `${c.encaje}/100` : "—";
+  const ats = c.ats;
+  $("q-ats").textContent = ats ? `${ats.puntaje}%` : "—";
+  $("q-ats-caja").className = `metrica ${ats ? (ats.puntaje === 100 ? "ok" : "mal") : ""}`;
+  vaciar($("q-fallas"));
+  for (const ch of (ats?.chequeos || []).filter((x) => !x.ok)) $("q-fallas").append(el("li", { text: `ATS: ${ch.nombre}${ch.detalle ? ` — ${ch.detalle}` : ""}` }));
+  const hist = c.calidad || [];
+  const ult = hist.at(-1);
+  $("q-total").textContent = ult ? `${ult.total}/100` : "—";
+  $("q-total-caja").className = `metrica ${ult ? (ult.total >= 90 ? "ok" : "medio") : ""}`;
+  $("q-historia").textContent = hist.length ? `${hist.map((x) => x.total).join(" → ")} · meta ≥ 90` : "Meta ≥ 90";
+  $("q-cobertura").textContent = c.cobertura_pct != null ? `${c.cobertura_pct}%` : "—";
+  vaciar($("q-dims"));
+  if (ult) for (const [k, w] of Object.entries(PESOS)) {
+    const v = ult.dimensiones[k] ?? 0;
+    const relleno = el("div", { class: "relleno" });
+    relleno.style.width = `${v}%`;
+    $("q-dims").append(el("div", { class: "dim" }, el("span", { text: `${k[0].toUpperCase()}${k.slice(1)} (${w}%)` }), el("div", { class: "pista" }, relleno), el("span", { class: "num", text: String(v) })));
+  }
+  vaciar($("q-cob"));
+  for (const r of c.cobertura || []) $("q-cob").append(el("tr", {}, el("td", { text: r.requisito }), el("td", { class: r.estado.replace(/ /g, "-"), text: r.estado }), el("td", { text: r.evidencia || "—" })));
+  vaciar($("q-riesgos"));
+  for (const r of c.riesgos || []) $("q-riesgos").append(el("li", { text: r }));
+  $("q-detalle").hidden = !(c.cobertura?.length || c.riesgos?.length);
+  $("q-recalcular").disabled = !c.carpeta || ACTIVAS.has(c.estado);
+}
+$("q-recalcular").addEventListener("click", () => accion(`/api/runs/${encodeURIComponent(corridaId)}/calidad`, {}, "Claude está revisando ATS y calidad"));

@@ -106,6 +106,12 @@ export function reportarPaso(
         c.pasos.splice(c.pasos.findIndex((p) => p.id === "registro"), 0, { id: "correo", titulo: TITULOS.correo, estado: "pendiente" });
       }
     }
+    if (!c.pasos.some((x) => x.id === pasoId) && BASE.includes(pasoId)) {
+      // Corridas creadas antes de que existiera este paso: se inserta después del paso anterior que sí tenga.
+      const previos = BASE.slice(0, BASE.indexOf(pasoId)).reverse();
+      const ancla = previos.map((id) => c.pasos.findIndex((x) => x.id === id)).find((i) => i >= 0) ?? -1;
+      c.pasos.splice(ancla + 1, 0, { id: pasoId, titulo: TITULOS[pasoId], estado: "pendiente" });
+    }
     const p = c.pasos.find((x) => x.id === pasoId);
     if (!p) throw new Error(`Paso desconocido: ${pasoId}`);
     p.estado = estado;

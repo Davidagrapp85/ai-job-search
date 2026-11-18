@@ -35,13 +35,36 @@ Antes de empezar un paso: `bun run tracker paso {{run_id}} <paso> "en curso"`. A
 |---|---|---|
 | `leer` | Lee la vacante; detecta duplicados en el tracker | `--archivo vacante.md --carpeta 04_Postulaciones/<NNN_…>` |
 | `investigar` | Empresa y cargo, hechos frente a inferencias | — |
-| `encaje` | Eje, puntaje, matriz de requisitos, alertas; decide el canal: `correo` si la vacante pide enviar la CV a una dirección, si no `portal` | `--archivo analisis.md --canal portal|correo --detalle "<puntaje>/100 · <n> alertas"` |
+| `encaje` | Eje, puntaje, matriz de requisitos, alertas; decide el canal: `correo` si la vacante pide enviar la CV a una dirección, si no `portal` | `--archivo analisis.md --canal portal|correo --puntaje <0-100> --detalle "<puntaje>/100 · <n> alertas"` |
 | `cv` | `content.json` + `build_docs.js` | `--archivo CV.docx` |
 | `carta` | Carta en el mismo `content.json` | `--archivo Carta.docx` |
+| `ats` | Corre `bun run tracker ats {{run_id}}`. Revisa el CV.docx: debe dar **100%** (correo y teléfono como texto, sin tablas ni imágenes, secciones estándar, encabezados en el idioma del CV). Si falla, corrige `content.json`, regenera y repite hasta 100 (máximo 3 intentos) | — (el comando reporta el paso) |
 | `respuestas` | Respuestas probables del formulario en `respuestas.md` (si no hay formulario, preguntas típicas del cargo) | `--archivo respuestas.md` |
+| `calidad` | Sigue la rúbrica de abajo; el comando reporta el paso | — |
 | `correo` | Solo si el canal es `correo`: redacta `correo.json` (`{"para":[…],"cc":[],"asunto":"…","cuerpo_html":"…","adjuntos":["CV.docx","Carta.docx"]}`). No crees el borrador | `--archivo correo.json` |
 | `registro` | Escribe la fila en `<carpeta>/_fila.json` y corre `bun run tracker upsert --json-file 05_Busqueda_Empleo/<carpeta>/_fila.json --causa "Nueva aplicación {{run_id}}"` con estado `en preparación`; anota el `application_id` | `--application-id APP-…` |
 
 Copia `content.json` a `content.v1.json` en la carpeta apenas generes los documentos por primera vez.
 
 Termina con un resumen de 5 líneas: nivel, alertas, lo declarado de riesgo alto que entró y la ruta.
+
+## Calidad del paquete (después de que ATS dé 100%)
+
+Califica el CV y las respuestas de 0 a 100 en cada variable. El total ponderado lo calcula el sistema; no lo calcules tú ni lo redondees a favor.
+
+| Variable | Peso | 100 significa | Baja cuando |
+|---|---|---|---|
+| `veracidad` | 30 | Cada afirmación tiene `EV-xxx` del banco; fechas y cargos exactos | Hay algo sin evidencia, una cifra redondeada hacia arriba o un `declarado` alto sin avisar |
+| `pertinencia` | 25 | Perfil y bullets responden a los requisitos de esta vacante, con sus términos | Bullets genéricos o requisitos clave sin abordar |
+| `evidencia` | 20 | Logros con cifra, alcance o resultado verificable | Responsabilidades sin resultado |
+| `claridad` | 15 | Frases cortas, verbo de acción, sin relleno, extensión adecuada | Párrafos largos, jerga, repeticiones |
+| `coherencia` | 10 | CV, respuestas y (si hay) carta cuentan la misma historia, mismo idioma y mismas cifras | Contradicciones o idiomas mezclados |
+
+**Cobertura:** por cada requisito de la vacante: `demostrado`, `parcial`, `no demostrado` o `desconocido`, con el `EV-xxx` si lo hay.
+**Riesgos:** lo que no se puede resolver con hechos (requisito excluyente, idioma, años).
+
+Escribe en `05_Busqueda_Empleo/<carpeta>/_calidad.json`:
+`{"dimensiones":{"veracidad":0,"pertinencia":0,"evidencia":0,"claridad":0,"coherencia":0},"cobertura":[{"requisito":"…","estado":"…","evidencia":"EV-…"}],"riesgos":["…"],"cambios":"qué cambiaste en esta ronda (vacío en la primera)"}`
+y corre `bun run tracker calidad {{run_id}} --json-file 05_Busqueda_Empleo/<carpeta>/_calidad.json`.
+
+**Rondas:** si el total queda bajo 90 y hay mejoras posibles **con hechos del banco**, mejora el CV (`content.json` + `build_docs.js`), vuelve a correr `bun run tracker ats {{run_id}}` (debe seguir en 100) y califica de nuevo. Máximo 2 rondas de mejora. Nunca subas una nota sin un cambio real; si no se puede llegar a 90 con hechos, déjalo y explica por qué en `riesgos`.

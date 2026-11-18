@@ -56,3 +56,13 @@ test("adjunto solo de aprobado/", () => {
   expect(adjunto(d, c.run_id, "CV.docx")).toMatchObject({ nombre: "CV.docx", base64: readFileSync(join(dir, "CV.docx")).toString("base64") });
   expect(() => adjunto(d, c.run_id, "../../05_Tracker/postulaciones.csv")).toThrow("Archivo no permitido");
 });
+
+test("corridas viejas reciben los pasos nuevos en su lugar", () => {
+  const d = datosTemporales();
+  const c = crearCorrida(d, { tipo: "texto", valor: "x" });
+  const { actualizarCorrida } = require("./runs");
+  actualizarCorrida(d, c.run_id, (x: any) => { x.pasos = x.pasos.filter((p: any) => !["ats", "calidad"].includes(p.id)); });
+  const r = reportarPaso(d, c.run_id, "ats", "listo");
+  expect(r.pasos.map((p) => p.id)).toEqual(["leer", "investigar", "encaje", "cv", "carta", "ats", "respuestas", "registro"]);
+  expect(reportarPaso(d, c.run_id, "calidad", "listo").pasos.map((p) => p.id)).toEqual(["leer", "investigar", "encaje", "cv", "carta", "ats", "respuestas", "calidad", "registro"]);
+});

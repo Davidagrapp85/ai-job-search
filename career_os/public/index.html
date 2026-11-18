@@ -45,6 +45,22 @@
       <p class="aviso error" id="n-error" hidden></p>
       <ol class="pasos" id="n-pasos"></ol>
 
+      <section class="calidad" id="n-calidad" hidden>
+        <div class="metricas">
+          <div class="metrica"><span>Encaje con la vacante</span><b id="q-encaje">—</b><small>No cambia con ajustes de redacción</small></div>
+          <div class="metrica" id="q-ats-caja"><span>1 · Legibilidad ATS</span><b id="q-ats">—</b><small>Debe ser 100% para aprobar el CV</small></div>
+          <div class="metrica" id="q-total-caja"><span>2 · Calidad del paquete</span><b id="q-total">—</b><small id="q-historia">Meta ≥ 90</small></div>
+          <div class="metrica"><span>Cobertura de requisitos</span><b id="q-cobertura">—</b><small>Demostrado = 1 · parcial = ½</small></div>
+        </div>
+        <ul class="fallas" id="q-fallas"></ul>
+        <div class="dimensiones" id="q-dims"></div>
+        <details id="q-detalle"><summary>Requisitos y riesgos</summary>
+          <table class="cob"><thead><tr><th>Requisito</th><th>Estado</th><th>Evidencia</th></tr></thead><tbody id="q-cob"></tbody></table>
+          <h4>Riesgos que no se resuelven con hechos</h4><ul id="q-riesgos"></ul>
+        </details>
+        <button id="q-recalcular" type="button">Recalcular calidad</button>
+      </section>
+
       <h3>Documentos</h3>
       <div class="docs" id="n-docs"></div>
 
