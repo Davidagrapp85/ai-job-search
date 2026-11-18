@@ -51,3 +51,31 @@ class Fase0Reglas(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+STATS = DATA / "07_Skills" / "empleo-tracker" / "stats.py"
+
+
+@unittest.skipUnless(STATS.is_file(), "stats.py no está presente")
+class Fase1Stats(unittest.TestCase):
+    """M-02: stats.py da los mismos totales con las 4 columnas nuevas y acepta `aprobada`."""
+
+    def _calcular(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("stats_tracker", STATS)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.calcular
+
+    def test_m02_stats_acepta_columnas_nuevas(self):
+        calcular = self._calcular()
+        base = [
+            {"numero": "001", "eje": "banca", "fecha": "2026-11-01", "estado": "enviada", "notas": ""},
+            {"numero": "002", "eje": "banca", "fecha": "2026-11-01", "estado": "entrevista",
+             "notas": "respuesta=2026-11-11"},
+            {"numero": "003", "eje": "revenue", "fecha": "", "estado": "aprobada", "notas": ""},
+        ]
+        nuevas = [dict(f, application_id=f"APP-{i:04d}", decision="user_selected", canal="Lever",
+                       fecha_envio=f["fecha"]) for i, f in enumerate(base, 1)]
+        self.assertEqual(calcular(base), calcular(nuevas))
+        self.assertEqual(calcular(nuevas)["enviadas"], 2)
