@@ -8,6 +8,15 @@ import pathlib
 import unittest
 
 DATA = pathlib.Path(__file__).resolve().parent.parent / "05_Busqueda_Empleo"
+# Nombres de empleos anteriores, uno por línea. Viven en los datos privados para
+# no publicar el historial laboral en el código.
+EMPLEOS_ANTERIORES = DATA / "02_Configuracion" / "empleos_anteriores.txt"
+
+
+def _empleos_anteriores():
+    if not EMPLEOS_ANTERIORES.is_file():
+        return []
+    return [l.strip() for l in EMPLEOS_ANTERIORES.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
 def _texts(*globs):
@@ -37,13 +46,16 @@ class Fase0Reglas(unittest.TestCase):
     def test_sin_discrecion_caducada(self):
         for p, t in _texts("07_Skills/*/SKILL.md"):
             self.assertNotIn("por discreción", t, p.parent.name)
-            self.assertNotIn("empleo anterior actual", t, p.parent.name)
+            for empresa in _empleos_anteriores():
+                self.assertNotIn(f"{empresa} actual", t, p.parent.name)
 
+    @unittest.skipUnless(_empleos_anteriores(), "sin empleos_anteriores.txt")
     def test_p01_empleo_anterior_no_es_actual(self):
+        empresas = _empleos_anteriores()
         for p, t in _texts("01_Perfil/banco_evidencias.md", "01_Perfil/cv_base.md",
                            "01_Perfil/narrativa.md"):
             for linea in t.splitlines():
-                if "ACME Fintech" in linea:
+                if any(e in linea for e in empresas):
                     for frase in ("– hoy", "empleo actual", "título actual"):
                         self.assertNotIn(frase, linea, f"{p.name}: {linea[:60]}")
 
