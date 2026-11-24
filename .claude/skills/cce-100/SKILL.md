@@ -6,7 +6,7 @@ description: >-
   Estándar transversal de comunicación clara y estructurada, inspirado en los
   principios de ASD-STE100. Úsalo para redactar, revisar y entregar respuestas,
   manuales, documentación, instrucciones para agentes, procedimientos, informes
-  y mensajes en español o inglés, incluidos proyectos BUO. Evita ambigüedad,
+  y mensajes en español o inglés. Evita ambigüedad,
   conserva datos, fuentes y precisión. No afirma conformidad oficial ASD-STE100.
 ---
 
@@ -43,7 +43,7 @@ CCE-100 es una **adaptación original** de principios de lenguaje controlado ins
 ## Reglas para situaciones críticas
 
 - **Legal, financiero y regulatorio:** conserva términos definidos, excepciones, condicionantes y matices materiales; la claridad no autoriza a simplificar obligaciones o conclusiones jurídicas.
-- **Riesgos y decisiones BUO:** muestra fuente y fecha cuando estén disponibles; separa ausencia de registros, fuente no consultada y hallazgo negativo. Nunca conviertas «sin datos» en «sin riesgo».
+- **Riesgos y decisiones:** muestra fuente y fecha cuando estén disponibles; separa ausencia de registros, fuente no consultada y hallazgo negativo. Nunca conviertas «sin datos» en «sin riesgo».
 - **Software y agentes:** escribe criterios de aceptación verificables. No modifiques nombres de APIs, rutas, tablas, variables, tipos ni comandos solo por hacerlos más legibles.
 - **Seguridad:** conserva advertencias críticas antes de los pasos a los que se aplican. No reemplaces validaciones, permisos ni controles por instrucciones genéricas.
 - **Material creativo o interpersonal:** conserva intención y naturalidad. No conviertas cuentos, conversaciones personales o mensajes cálidos en manuales mecánicos.
@@ -58,28 +58,24 @@ Elige un modo según la tarea. No anuncies el modo salvo que sea útil.
 - **Explicación:** definición, mecanismo, ejemplo, limitaciones.
 - **Resumen ejecutivo:** conclusión, evidencias clave, riesgo o decisión, siguiente acción.
 - **Investigación:** pregunta, método o alcance, hallazgos con fuente y fecha, incertidumbre, implicación.
-- **Agente BUO:** objetivo, entradas, reglas, decisiones, salidas, errores, trazabilidad y pruebas.
+- **Instrucción para agente:** objetivo, entradas, reglas, decisiones, salidas, errores, trazabilidad y pruebas.
 
-Lee `references/plantillas.md` solo si debes producir una pieza formal o un prompt para otro agente. Lee `references/evaluacion.md` cuando debas auditar la calidad de un texto. Lee `references/glosario-buo.md` cuando trabajes sobre terminología BUO. Consulta el diccionario canónico `docs/BUO_DICCIONARIO.md` si está disponible en el repositorio; si no lo está, informa la limitación y utiliza la referencia del paquete únicamente cuando sea accesible. Usa `references/gobernanza.md` para evaluar propuestas de cambios de versión.
+Lee `references/plantillas.md` solo si debes producir una pieza formal o un prompt para otro agente. Lee `references/evaluacion.md` cuando debas auditar la calidad de un texto. Si el proyecto tiene un glosario de perfil, consúltalo antes de fijar terminología; si no está disponible, informa la limitación. Usa `references/gobernanza.md` para evaluar propuestas de cambios de versión.
 
 ## Evolución y gobierno
 
 El estándar se versiona y se actualiza únicamente después de aprobar cambios y superar las pruebas. Consulta `references/gobernanza.md` antes de proponer una nueva regla. Un agente puede detectar errores, abrir propuestas y redactar un cambio, pero no puede aprobarlo ni cambiar por sí mismo el estándar en producción.
 
 - Núcleo CCE-100: principios transversales de comunicación.
-- Perfil BUO: reglas específicas de agentes, informes y riesgos, documentadas por separado.
+- Perfiles: reglas específicas de un sector o producto, documentadas por separado.
 - Los cambios se validan en un conjunto de ejemplos y con revisión humana.
 - Cada despliegue registra versión y permite volver a la anterior.
 
-## Diccionario BUO: detección y mejora continua
+## Glosario de perfil: detección y mejora continua
 
-En toda tarea relacionada con BUO, consulta primero el diccionario disponible. Usa una denominación por concepto. Distingue términos del diccionario base y propuestas pendientes.
+Cuando el proyecto tenga un glosario de perfil, consúltalo primero. Usa una denominación por concepto. Distingue términos vigentes y propuestas pendientes.
 
-Si detectas un concepto nuevo y relevante, una sigla no definida, un sinónimo contradictorio o una definición que cause ambigüedad, prepara una **propuesta** con término, definición tentativa, dominio y referencia de origen. Hazlo solo si existe evidencia. No inventes fuentes ni extraigas datos personales.
-
-Si tienes acceso autorizado de escritura a un repositorio BUO, agrega la propuesta a la sección de candidatos mediante `.cce-100/scripts/glossary_ingest.py` (si está instalado en BUO) o un mecanismo equivalente sin sobrescribir el diccionario base. Cuando no tengas ese acceso, entrega la propuesta en formato compatible con `.cce-100/PROMPT_EXTRACTOR_DICCIONARIO.md` si está instalado; **no afirmes que el archivo fue actualizado**.
-
-La curación es continua; una revisión semanal decide sobre propuestas. La revisión mensual evalúa inconsistencias, vigencia de definiciones y efectos sobre respuestas e informes. Únicamente los cambios aprobados y probados pasan a una nueva versión del diccionario base. Los nuevos términos pendientes nunca se convierten automáticamente en instrucciones del motor BUO.
+Si detectas un concepto nuevo y relevante, una sigla no definida, un sinónimo contradictorio o una definición que cause ambigüedad, prepara una **propuesta** con término, definición tentativa, dominio y referencia de origen. Hazlo solo si existe evidencia. No inventes fuentes ni extraigas datos personales. **No afirmes que el glosario fue actualizado** si no lo modificaste, y nunca conviertas una propuesta en definición vigente sin aprobación.
 
 ## Control de calidad antes de entregar
 
@@ -100,7 +96,7 @@ Corrige antes de entregar. No publiques la lista de control salvo solicitud expl
 
 **Preferido:** «Consulta las fuentes autorizadas. Valida los resultados. Genera el informe.»
 
-**No recomendado:** «BUO encontró información insuficiente. El cliente no presenta riesgo.»
+**No recomendado:** «El sistema encontró información insuficiente. El cliente no presenta riesgo.»
 
 **Preferido:** «No hay datos suficientes para estimar el riesgo. Identifica las fuentes que faltan antes de tomar una decisión.»
 

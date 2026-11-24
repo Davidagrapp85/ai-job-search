@@ -9,8 +9,8 @@ CCE-100 cambia con base en evidencia de mejor comunicación y menores errores de
 ## Capas
 
 1. **CCE-100 Core:** reglas generales, excepciones, modos de salida y criterios de calidad.
-2. **Perfiles:** convenciones de BUO, legal, riesgos, soporte, marketing o equipos específicos. Una excepción sectorial no debe cambiar el núcleo si solo afecta a un perfil.
-3. **Integraciones:** ChatGPT, Codex, Claude Code, BUO y documentación; cada entorno fija una versión verificable.
+2. **Perfiles:** convenciones de un producto, legal, riesgos, soporte, marketing o equipos específicos. Una excepción sectorial no debe cambiar el núcleo si solo afecta a un perfil.
+3. **Integraciones:** ChatGPT, Codex, Claude Code, agentes de producto y documentación; cada entorno fija una versión verificable.
 
 ## Flujo obligatorio de cambio
 
@@ -65,12 +65,12 @@ Estados: `propuesta` → `en evaluación` → `en pruebas` → `aprobada` → `l
 
 ## Fuente de verdad y despliegue
 
-Recomendación: repositorio independiente `cce-100` en GitHub, con tags firmados o protegidos y revisión por pull request. BUO y los agentes consumen releases aprobadas. No usar cinco copias editadas de forma independiente. Mantener la versión instalada en cada entorno y actualizarla explícitamente después de revisar el diff.
+Recomendación: repositorio independiente `cce-100` en GitHub, con tags firmados o protegidos y revisión por pull request. Los productos y los agentes consumen releases aprobadas. No usar cinco copias editadas de forma independiente. Mantener la versión instalada en cada entorno y actualizarla explícitamente después de revisar el diff.
 
-**No autorizar despliegue automático a producción del motor BUO** por el mero hecho de aprobar una regla editorial. Requiere pruebas de producto y publicación propia.
+**No autorizar despliegue automático a producción de un producto** por el mero hecho de aprobar una regla editorial. Requiere pruebas de producto y publicación propia.
 
-## Gobierno del diccionario BUO
+## Gobierno de glosarios de perfil
 
-El diccionario BUO tiene versión editorial independiente del Core CCE-100. La detección e ingesta de **candidatos** puede ser automática. La aceptación de una definición exige responsable y evidencia. La publicación requiere comparar su efecto sobre prompts, reportes, alertas y documentación.
+Cada glosario de perfil tiene versión editorial independiente del Core CCE-100. La detección de **candidatos** puede ser automática. La aceptación de una definición exige responsable y evidencia. La publicación requiere comparar su efecto sobre prompts, reportes, alertas y documentación.
 
-Revisión de candidatos: semanal. Revisión integral: mensual. Si un término definido induce un error de identidad, score, fuente, titularidad o riesgo, tratarlo como incidente crítico y bloquear su liberación. Ver `diccionario/PROCESO_DE_ACTUALIZACION.md`.
+Si un término definido induce un error de identidad, puntaje, fuente, titularidad o riesgo, trátalo como incidente crítico y bloquea su liberación.

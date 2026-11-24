@@ -1,9 +1,9 @@
 {
   "standard": "CCE-100",
   "version": "1.2.0",
-  "source_repo": "Thrivox/cce-100",
+  "source_repo": "Davidagrapp85/cce-100",
   "source_ref": "v1.2.0",
-  "source_sha": "b0bc0f52d2e9396e40c6e96708741ff01a50b85b",
+  "source_sha": "9a7a2e152bcbf764485785cb11b8f07f60b19921",
   "profile": {
     "skills": [
       ".claude/skills/cce-100",
@@ -12,8 +12,7 @@
     "instructions": [
       "AGENTS.md",
       "CLAUDE.md"
-    ],
-    "dictionary": "none"
+    ]
   },
-  "managed_by": "Thrivox/cce-100 (no editar a mano; usar el sincronizador)"
+  "managed_by": "Davidagrapp85/cce-100 (no editar a mano; usar el sincronizador)"
 }
